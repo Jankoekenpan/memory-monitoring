@@ -5,8 +5,8 @@ import java.util.Objects;
 // TODO support arrays. might need an ArrayReference class?
 public final class FieldReference {
 
-    private final Object owningInstance; // for static fields, this would be the java.lang.Class instance.
-    private final String fieldName;
+    final Object owningInstance; // for static fields, this would be the java.lang.Class instance.
+    final String fieldName;
 
     public FieldReference(Object owningInstance, String fieldName) {
         this.owningInstance = Objects.requireNonNull(owningInstance);

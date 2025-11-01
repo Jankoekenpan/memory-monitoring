@@ -22,6 +22,7 @@ public final class Permissions {
         permissions.put(new FieldAccess(threadId, fieldReference), access);
     }
 
+    // Called by bytecode-transformed code
     public static Access getPermission(FieldReference fieldReference) {
         return getPermission(Thread.currentThread().getId(), fieldReference);
     }
@@ -31,13 +32,19 @@ public final class Permissions {
     }
 
     private static Access getPermission(FieldAccess fieldAccess) {
-        return permissions.getOrDefault(fieldAccess, Access.NONE);
+        if (fieldAccess.fieldReference.owningInstance == Access.class) {
+            return Access.READ; // read access for Access.NONE, Access.READ, access.WRITE always allowed.
+        } else {
+            return permissions.getOrDefault(fieldAccess, Access.NONE);
+        }
     }
 
+    // Called by bytecode-transformed code
     public static void logRead(FieldReference fieldReference) {
         logRead(new FieldAccess(Thread.currentThread().getId(), fieldReference));
     }
 
+    // Called by bytecode-transformed code
     public static void logWrite(FieldReference fieldReference) {
         logWrite(new FieldAccess(Thread.currentThread().getId(), fieldReference));
     }

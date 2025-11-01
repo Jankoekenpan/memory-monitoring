@@ -38,7 +38,7 @@
     <dependencies>
         <dependency>
             <groupId>memory-monitoring</groupId>
-            <artifactId>runtime-api</artifactId>
+            <artifactId>runtime</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

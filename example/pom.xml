@@ -21,13 +21,25 @@
                     <release>${java.version}</release>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>${maven-jar-plugin.version}</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>memorymonitoring.example.Main</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
     <dependencies>
         <dependency>
             <groupId>memory-monitoring</groupId>
-            <artifactId>runtime-api</artifactId>
+            <artifactId>runtime</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

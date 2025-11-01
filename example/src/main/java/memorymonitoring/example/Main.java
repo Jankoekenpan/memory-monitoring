@@ -2,10 +2,8 @@ package memorymonitoring.example;
 
 import memorymonitoring.runtime.Access;
 import memorymonitoring.runtime.FieldReference;
-import memorymonitoring.runtime.Monitored;
 import memorymonitoring.runtime.Permissions;
 
-@Monitored
 public class Main {
 
     private int instanceField;

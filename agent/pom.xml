@@ -35,12 +35,4 @@
         </plugins>
     </build>
 
-    <dependencies>
-        <dependency>
-            <groupId>memory-monitoring</groupId>
-            <artifactId>runtime</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-    </dependencies>
-
 </project>

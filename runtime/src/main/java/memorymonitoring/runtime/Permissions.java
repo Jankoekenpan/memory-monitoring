@@ -18,7 +18,7 @@ public final class Permissions {
         setPermission(Thread.currentThread().getId(), fieldReference, access);
     }
 
-    private static void setPermission(long threadId, FieldReference fieldReference, Access access) {
+    public static void setPermission(long threadId, FieldReference fieldReference, Access access) {
         permissions.put(new FieldAccess(threadId, fieldReference), access);
     }
 
@@ -32,11 +32,7 @@ public final class Permissions {
     }
 
     private static Access getPermission(FieldAccess fieldAccess) {
-        if (fieldAccess.fieldReference.owningInstance == Access.class) {
-            return Access.READ; // read access for Access.NONE, Access.READ, access.WRITE always allowed.
-        } else {
-            return permissions.getOrDefault(fieldAccess, Access.NONE);
-        }
+        return permissions.getOrDefault(fieldAccess, Access.NONE);
     }
 
     // Called by bytecode-transformed code
@@ -58,6 +54,11 @@ public final class Permissions {
     }
 
     private static void logAccess(FieldAccess fieldAccess, Access accessLevel) {
+        if (fieldAccess.fieldReference.owningInstance == Access.class) {
+            // Reading from the Access class is always allowed. Writing is not possible.
+            return;
+        }
+
         String message = String.format("Thread %s: trying to access %s at level %s.", fieldAccess.threadId, fieldAccess.fieldReference, accessLevel);
         Access actualPermission = getPermission(fieldAccess);
         boolean allowed = actualPermission.covers(accessLevel);

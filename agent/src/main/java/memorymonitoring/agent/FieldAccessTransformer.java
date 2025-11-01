@@ -5,7 +5,6 @@ import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassTransform;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
-import java.lang.classfile.MethodModel;
 import java.lang.classfile.Opcode;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.FieldRefEntry;
@@ -136,7 +135,7 @@ public class FieldAccessTransformer implements ClassFileTransformer {
                         // [..., newValue, FieldReference, FieldReference, Owner.class, fieldName]
                         codeBuilder.invokespecial(FIELD_REFERENCE_CLASSDESC, "<init>", FIELD_REFERENCE_CONSTRUCTOR_TYPE_DESC, false);
                         // [..., newValue, FieldReference]
-                        codeBuilder.invokestatic(PERMISSIONS_CLASSDESC, "logRead", LOG_METHOD_TYPE_DESC, false);
+                        codeBuilder.invokestatic(PERMISSIONS_CLASSDESC, "logWrite", LOG_METHOD_TYPE_DESC, false);
                         // [..., newValue]
                         codeBuilder.with(codeElement);
                         // [...]

@@ -17,13 +17,15 @@ import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.security.ProtectionDomain;
 
-public class FieldAccessTransformer implements ClassFileTransformer {
+public class FieldUsageTransformer implements ClassFileTransformer {
 
     private static final String RUNTIME_PACKAGE = "memorymonitoring.runtime";
     private static final ClassDesc FIELD_REFERENCE_CLASSDESC = ClassDesc.of(RUNTIME_PACKAGE, "FieldReference");
     private static final MethodTypeDesc FIELD_REFERENCE_CONSTRUCTOR_TYPE_DESC = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_Object, ConstantDescs.CD_String);
     private static final ClassDesc PERMISSIONS_CLASSDESC = ClassDesc.of(RUNTIME_PACKAGE, "Permissions");
     private static final MethodTypeDesc LOG_METHOD_TYPE_DESC = MethodTypeDesc.of(ConstantDescs.CD_void, FIELD_REFERENCE_CLASSDESC);
+    private static final ClassDesc REFERENCES_CLASSDESC = ClassDesc.of(RUNTIME_PACKAGE, "References");
+    private static final MethodTypeDesc GET_FIELD_REFERENCE_METHOD_TYPE_DESC = MethodTypeDesc.of(FIELD_REFERENCE_CLASSDESC, ConstantDescs.CD_Object, ConstantDescs.CD_String);
 
     @Override
     public byte[] transform(Module           module,
@@ -48,6 +50,7 @@ public class FieldAccessTransformer implements ClassFileTransformer {
                 FieldRefEntry fieldRefEntry = fieldInstruction.field();
                 ClassEntry owningClass = fieldRefEntry.owner();
                 Utf8Entry fieldName = fieldRefEntry.name();
+                ClassDesc fieldType = fieldRefEntry.typeSymbol(); // TODO special handling for double & long.
 
                 // TODO currently does not work for double and long (because they occupy two slots on the operand stack)
                 // TODO from them we should use different dup and swap instructions.
@@ -59,15 +62,9 @@ public class FieldAccessTransformer implements ClassFileTransformer {
                         // [..., objectRef]
                         codeBuilder.dup();
                         // [..., objectRef, objectRef]
-                        codeBuilder.new_(FIELD_REFERENCE_CLASSDESC);
-                        // [..., objectRef, objectRef, FieldReference]
-                        codeBuilder.dup_x1();
-                        // [..., objectRef, FieldReference, objectRef, FieldReference]
-                        codeBuilder.swap();
-                        // [..., objectRef, FieldReference, FieldReference, objectRef]
                         codeBuilder.ldc(fieldName.stringValue());
-                        // [..., objectRef, FieldReference, FieldReference, objectRef, fieldName]
-                        codeBuilder.invokespecial(FIELD_REFERENCE_CLASSDESC, "<init>", FIELD_REFERENCE_CONSTRUCTOR_TYPE_DESC, false);
+                        // [..., objectRef, objectRef, fieldName]
+                        codeBuilder.invokestatic(REFERENCES_CLASSDESC, "getFieldReference", GET_FIELD_REFERENCE_METHOD_TYPE_DESC, false);
                         // [..., objectRef, FieldReference]
                         codeBuilder.invokestatic(PERMISSIONS_CLASSDESC, "logRead", LOG_METHOD_TYPE_DESC, false);
                         // [..., objectRef]
@@ -83,15 +80,9 @@ public class FieldAccessTransformer implements ClassFileTransformer {
                         // [..., newValue, objectRef]
                         codeBuilder.dup();
                         // [..., newValue, objectRef, objectRef]
-                        codeBuilder.new_(FIELD_REFERENCE_CLASSDESC);
-                        // [..., newValue, objectRef, objectRef, FieldReference]
-                        codeBuilder.dup_x1();
-                        // [..., newValue, objectRef, FieldReference, objectRef, FieldReference]
-                        codeBuilder.swap();
-                        // [..., newValue, objectRef, FieldReference, FieldReference, objectRef]
                         codeBuilder.ldc(fieldName.stringValue());
-                        // [..., newValue, objectRef, FieldReference, FieldReference, objectRef, fieldName]
-                        codeBuilder.invokespecial(FIELD_REFERENCE_CLASSDESC, "<init>", FIELD_REFERENCE_CONSTRUCTOR_TYPE_DESC, false);
+                        // [..., newValue, objectRef, objectRef, fieldName]
+                        codeBuilder.invokestatic(REFERENCES_CLASSDESC, "getFieldReference", GET_FIELD_REFERENCE_METHOD_TYPE_DESC, false);
                         // [..., newValue, objectRef, FieldReference]
                         codeBuilder.invokestatic(PERMISSIONS_CLASSDESC, "logWrite", LOG_METHOD_TYPE_DESC, false);
                         // [..., newValue, objectRef]
@@ -105,15 +96,11 @@ public class FieldAccessTransformer implements ClassFileTransformer {
 
                         // Stack:
                         // [...]
-                        codeBuilder.new_(FIELD_REFERENCE_CLASSDESC);
-                        // [..., FieldReference]
-                        codeBuilder.dup();
-                        // [..., FieldReference, FieldReference]
                         codeBuilder.ldc(owningClass.asSymbol());
-                        // [..., FieldReference, FieldReference, Owner.class]
+                        // [..., Owner.class]
                         codeBuilder.ldc(fieldName.stringValue());
-                        // [..., FieldReference, FieldReference, Owner.class, fieldName]
-                        codeBuilder.invokespecial(FIELD_REFERENCE_CLASSDESC, "<init>", FIELD_REFERENCE_CONSTRUCTOR_TYPE_DESC, false);
+                        // [..., Owner.class, fieldName]
+                        codeBuilder.invokestatic(REFERENCES_CLASSDESC, "getFieldReference", GET_FIELD_REFERENCE_METHOD_TYPE_DESC, false);
                         // [..., FieldReference]
                         codeBuilder.invokestatic(PERMISSIONS_CLASSDESC, "logRead", LOG_METHOD_TYPE_DESC, false);
                         // [...]
@@ -125,15 +112,11 @@ public class FieldAccessTransformer implements ClassFileTransformer {
 
                         // Stack:
                         // [..., newValue]
-                        codeBuilder.new_(FIELD_REFERENCE_CLASSDESC);
-                        // [..., newValue, FieldReference]
-                        codeBuilder.dup();
-                        // [..., newValue, FieldReference, FieldReference]
                         codeBuilder.ldc(owningClass.asSymbol());
-                        // [..., newValue, FieldReference, FieldReference, Owner.class]
+                        // [..., newValue, Owner.class]
                         codeBuilder.ldc(fieldName.stringValue());
-                        // [..., newValue, FieldReference, FieldReference, Owner.class, fieldName]
-                        codeBuilder.invokespecial(FIELD_REFERENCE_CLASSDESC, "<init>", FIELD_REFERENCE_CONSTRUCTOR_TYPE_DESC, false);
+                        // [..., newValue, Owner.class, fieldName]
+                        codeBuilder.invokestatic(REFERENCES_CLASSDESC, "getFieldReference", GET_FIELD_REFERENCE_METHOD_TYPE_DESC, false);
                         // [..., newValue, FieldReference]
                         codeBuilder.invokestatic(PERMISSIONS_CLASSDESC, "logWrite", LOG_METHOD_TYPE_DESC, false);
                         // [..., newValue]

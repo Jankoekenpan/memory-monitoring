@@ -1,32 +1,47 @@
 package memorymonitoring.runtime;
 
+import org.jspecify.annotations.Nullable;
+
+import java.lang.ref.WeakReference;
 import java.util.Objects;
 
-// TODO support arrays. might need an ArrayReference class?
-public final class FieldReference {
+/** Obtain instance via {@linkplain References}. */
+public final class FieldReference implements Reference {
 
-    final Object owningInstance; // for static fields, this would be the java.lang.Class instance.
-    final String fieldName;
+    private final WeakReference<Object> owningInstance; // for static fields, the owningInstance Object is a java.lang.Class object.
+    private final String fieldName;
 
-    public FieldReference(Object owningInstance, String fieldName) {
-        this.owningInstance = Objects.requireNonNull(owningInstance);
+    private final int hashCode;
+
+    FieldReference(Object owningInstance, String fieldName) {
+        this.owningInstance = new WeakReference<>(Objects.requireNonNull(owningInstance));
         this.fieldName = Objects.requireNonNull(fieldName);
+
+        this.hashCode = Objects.hash(System.identityHashCode(owningInstance), fieldName);
+    }
+
+    public @Nullable Object owningInstance() {
+        return owningInstance.get();
+    }
+
+    public String fieldName() {
+        return fieldName;
     }
 
     @Override
-    public boolean equals(Object o) {
-        return o instanceof FieldReference that
-                && this.owningInstance == that.owningInstance   // intentional reference equality
-                && this.fieldName.equals(that.fieldName);
+    public boolean equals(Object other) {
+        return other == this || (other instanceof FieldReference that
+                && this.owningInstance.get() == that.owningInstance.get()
+                && this.fieldName.equals(that.fieldName));
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(System.identityHashCode(owningInstance), fieldName);
+        return hashCode;
     }
 
     @Override
     public String toString() {
-        return "FieldReference(owningInstance=" + owningInstance + ", fieldName=" + fieldName + ")";
+        return "FieldReference(owningInstance=" + owningInstance.get() + ", fieldName=" + fieldName + ")";
     }
 }

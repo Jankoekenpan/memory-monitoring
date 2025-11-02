@@ -3,6 +3,7 @@ package memorymonitoring.example;
 import memorymonitoring.runtime.Access;
 import memorymonitoring.runtime.FieldReference;
 import memorymonitoring.runtime.Permissions;
+import memorymonitoring.runtime.References;
 
 public class Main {
 
@@ -12,9 +13,11 @@ public class Main {
     public static void main(String[] args) {
         IO.println("Hello, World!");
 
-        Permissions.setPermission(new FieldReference(Main.class, "staticField"), Access.WRITE);
+        FieldReference staticFieldRef = References.getFieldReference(Main.class, "staticField");
+        Permissions.setPermission(staticFieldRef, Access.WRITE);
         Main main = new Main();
-        Permissions.setPermission(new FieldReference(main, "instanceField"), Access.WRITE);
+        FieldReference instanceFieldRef = References.getFieldReference(main, "instanceField");
+        Permissions.setPermission(instanceFieldRef, Access.WRITE);
 
         main.instanceField += 1;
         Main.staticField += 1;

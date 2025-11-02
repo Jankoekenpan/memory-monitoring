@@ -10,7 +10,7 @@ public class Agent {
     public static void premain(String agentArgs, Instrumentation inst) {
         try {
             System.out.println("Agent loaded at startup.");
-            inst.addTransformer(new FieldAccessTransformer());
+            inst.addTransformer(new FieldUsageTransformer());
         } catch (Throwable ex) {
             ex.printStackTrace();
         }

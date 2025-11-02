@@ -17,7 +17,7 @@ import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.security.ProtectionDomain;
 
-public class FieldUsageTransformer implements ClassFileTransformer {
+public final class FieldUsageTransformer implements ClassFileTransformer {
 
     private static final String RUNTIME_PACKAGE = "memorymonitoring.runtime";
     private static final ClassDesc FIELD_REFERENCE_CLASSDESC = ClassDesc.of(RUNTIME_PACKAGE, "FieldReference");

@@ -1,6 +1,6 @@
 # Memory monitoring
 
-This project contains a proof of concept for access-based monitoring of field accesses in Java.
+This project contains a proof of concept for permission-based monitoring of field accesses in Java.
 
 The project is split up in 3 modules
 1. Memory monitoring runtime api
@@ -33,5 +33,5 @@ java -javaagent:.\agent\target\agent-1.0-SNAPSHOT.jar -cp .\runtime\target\runti
 - Proper support for fields of type `long` and `double`.
 - Support for monitoring reads and writes to arrays.
 - For class initialisers: always assume write permissions to static fields in the declaring class.
-- For constructors: always assume write access to instance fields in the declaring class.
+- For constructors: always assume write permission to instance fields in the declaring class.
 - Un-hardcode classes to be instrumented.

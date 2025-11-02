@@ -1,6 +1,8 @@
 package memorymonitoring.runtime;
 
 
+import org.jspecify.annotations.Nullable;
+
 import java.lang.ref.WeakReference;
 import java.util.Objects;
 
@@ -11,11 +13,19 @@ public final class ArrayReference implements Reference {
 
     private final int hashCode;
 
-    ArrayReference(Object owningInstance, int index) {
-        this.arrayInstance = new WeakReference<>(Objects.requireNonNull(owningInstance));
+    ArrayReference(Object arrayInstance, int index) {
+        this.arrayInstance = new WeakReference<>(Objects.requireNonNull(arrayInstance));
         this.index = index;
 
-        this.hashCode = Objects.hash(System.identityHashCode(owningInstance), index);
+        this.hashCode = Objects.hash(System.identityHashCode(arrayInstance), index);
+    }
+
+    public @Nullable Object arrayInstance() {
+        return arrayInstance.get();
+    }
+
+    public int index() {
+        return index;
     }
 
     @Override

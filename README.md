@@ -30,7 +30,6 @@ java -javaagent:.\agent\target\agent-1.0-SNAPSHOT.jar -cp .\runtime\target\runti
 ```
 
 ## Future work
-- Proper support for fields of type `long` and `double`.
 - Support for monitoring reads and writes to arrays.
 - For class initialisers: always assume write permissions to static fields in the declaring class.
 - For constructors: always assume write permission to instance fields in the declaring class.

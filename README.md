@@ -32,5 +32,7 @@ java -javaagent:.\agent\target\agent-1.0-SNAPSHOT.jar -cp .\runtime\target\runti
 ## Future work
 - For class initialisers: always assume write permissions to static fields in the declaring class.
 - For constructors: always assume write permission to instance fields in the declaring class.
-- Track write permissions newly created objects? (all fields of an object instance, all elements of an array)
+- Track write permissions newly created objects? (all fields of an object instance, all elements of an array.)
 - Un-hardcode classes to be instrumented.
+- Fractional permissions? split & merge support?
+- Permission tracking over ranges in arrays (QOL).

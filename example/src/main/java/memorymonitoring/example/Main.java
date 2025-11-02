@@ -14,7 +14,7 @@ public class Main {
     private static int staticField;
     private double instanceDouble = Double.NaN;
     private static long[] staticLongArray = {0L, 1L, 2L};
-    private Object[] objectArary = new Object[1];
+    private Object[] objectArray = new Object[1];
 
     public static void main(String[] args) {
         IO.println("Hello, World!");
@@ -35,7 +35,7 @@ public class Main {
         Permissions.setPermission(instanceFieldRef, Access.WRITE);
         FieldReference objectArrayFieldRef = References.getFieldReference(main, "objectArray");
         Permissions.setPermission(objectArrayFieldRef, Access.READ);
-        ArrayReference objectsAtIndex0 = References.getArrayReference(main.objectArary, 0);
+        ArrayReference objectsAtIndex0 = References.getArrayReference(main.objectArray, 0);
         Permissions.setPermission(objectsAtIndex0, Access.WRITE);
 
         main.instanceField += 1;
@@ -49,8 +49,8 @@ public class Main {
         staticLongArray[1] += 1L;
         staticLongArray[2] += 1L;
         IO.println("staticLongArray = " + Arrays.toString(staticLongArray));
-        main.objectArary[0] = "Projector Inc.";
-        IO.println("objectArray = " + Arrays.toString(main.objectArary));
+        main.objectArray[0] = "Projector Inc.";
+        IO.println("objectArray = " + Arrays.toString(main.objectArray));
     }
 
 }

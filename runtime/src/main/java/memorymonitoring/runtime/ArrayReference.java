@@ -57,7 +57,8 @@ public final class ArrayReference implements Reference {
             case float[] floats -> Arrays.toString(floats);
             case double[] doubles -> Arrays.toString(doubles);
             case Object[] objects -> Arrays.deepToString(objects);
-            case null, default -> "null";
+            case null -> "null";
+            default -> throw new RuntimeException("Impossible");
         };
     }
 }

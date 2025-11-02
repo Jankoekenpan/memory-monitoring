@@ -7,7 +7,7 @@ import memorymonitoring.runtime.References;
 
 public class Main {
 
-    private int instanceField;
+    private long instanceField;
     private static int staticField;
 
     public static void main(String[] args) {

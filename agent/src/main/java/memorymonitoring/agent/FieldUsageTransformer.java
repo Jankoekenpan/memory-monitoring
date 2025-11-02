@@ -6,6 +6,7 @@ import java.lang.classfile.ClassTransform;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.Opcode;
+import java.lang.classfile.TypeKind;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.FieldRefEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
@@ -21,7 +22,6 @@ public final class FieldUsageTransformer implements ClassFileTransformer {
 
     private static final String RUNTIME_PACKAGE = "memorymonitoring.runtime";
     private static final ClassDesc FIELD_REFERENCE_CLASSDESC = ClassDesc.of(RUNTIME_PACKAGE, "FieldReference");
-    private static final MethodTypeDesc FIELD_REFERENCE_CONSTRUCTOR_TYPE_DESC = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_Object, ConstantDescs.CD_String);
     private static final ClassDesc PERMISSIONS_CLASSDESC = ClassDesc.of(RUNTIME_PACKAGE, "Permissions");
     private static final MethodTypeDesc LOG_METHOD_TYPE_DESC = MethodTypeDesc.of(ConstantDescs.CD_void, FIELD_REFERENCE_CLASSDESC);
     private static final ClassDesc REFERENCES_CLASSDESC = ClassDesc.of(RUNTIME_PACKAGE, "References");
@@ -50,10 +50,8 @@ public final class FieldUsageTransformer implements ClassFileTransformer {
                 FieldRefEntry fieldRefEntry = fieldInstruction.field();
                 ClassEntry owningClass = fieldRefEntry.owner();
                 Utf8Entry fieldName = fieldRefEntry.name();
-                ClassDesc fieldType = fieldRefEntry.typeSymbol(); // TODO special handling for double & long.
+                ClassDesc fieldType = fieldRefEntry.typeSymbol();
 
-                // TODO currently does not work for double and long (because they occupy two slots on the operand stack)
-                // TODO from them we should use different dup and swap instructions.
                 switch (fieldInstruction.opcode()) {
                     case Opcode.GETFIELD:
                         // getfield: [..., objectRef] -> [..., fieldValue]
@@ -76,7 +74,17 @@ public final class FieldUsageTransformer implements ClassFileTransformer {
 
                         // Operand stack
                         // [..., objectRef, newValue]
-                        codeBuilder.swap();
+
+                        int localVariableTableSlot = -1;
+                        if (isPrimitiveLong(fieldType)) {
+                            localVariableTableSlot = codeBuilder.allocateLocal(TypeKind.LONG);
+                            codeBuilder.lstore(localVariableTableSlot);
+                        } else if (isPrimitiveDouble(fieldType)) {
+                            localVariableTableSlot = codeBuilder.allocateLocal(TypeKind.DOUBLE);
+                            codeBuilder.dstore(localVariableTableSlot);
+                        } else {
+                            codeBuilder.swap();
+                        }
                         // [..., newValue, objectRef]
                         codeBuilder.dup();
                         // [..., newValue, objectRef, objectRef]
@@ -86,7 +94,13 @@ public final class FieldUsageTransformer implements ClassFileTransformer {
                         // [..., newValue, objectRef, FieldReference]
                         codeBuilder.invokestatic(PERMISSIONS_CLASSDESC, "logWrite", LOG_METHOD_TYPE_DESC, false);
                         // [..., newValue, objectRef]
-                        codeBuilder.swap();
+                        if (isPrimitiveLong(fieldType)) {
+                            codeBuilder.lload(localVariableTableSlot);
+                        } else if (isPrimitiveDouble(fieldType)) {
+                            codeBuilder.dload(localVariableTableSlot);
+                        } else {
+                            codeBuilder.swap();
+                        }
                         // [..., objectRef, newValue]
                         codeBuilder.with(codeElement);
                         // [...]
@@ -135,4 +149,15 @@ public final class FieldUsageTransformer implements ClassFileTransformer {
         return result;
     }
 
+    private static boolean isCategory2Type(ClassDesc type) {
+        return isPrimitiveLong(type) || isPrimitiveDouble(type);
+    }
+
+    private static boolean isPrimitiveLong(ClassDesc type) {
+        return ConstantDescs.CD_long.equals(type);
+    }
+
+    private static boolean isPrimitiveDouble(ClassDesc type) {
+        return ConstantDescs.CD_double.equals(type);
+    }
 }

@@ -13,19 +13,12 @@ import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.classfile.instruction.FieldInstruction;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
-import java.lang.constant.MethodTypeDesc;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.security.ProtectionDomain;
+import static memorymonitoring.agent.RuntimeApiConstants.*;
 
-public final class FieldUsageTransformer implements ClassFileTransformer {
-
-    private static final String RUNTIME_PACKAGE = "memorymonitoring.runtime";
-    private static final ClassDesc FIELD_REFERENCE_CLASSDESC = ClassDesc.of(RUNTIME_PACKAGE, "FieldReference");
-    private static final ClassDesc PERMISSIONS_CLASSDESC = ClassDesc.of(RUNTIME_PACKAGE, "Permissions");
-    private static final MethodTypeDesc LOG_METHOD_TYPE_DESC = MethodTypeDesc.of(ConstantDescs.CD_void, FIELD_REFERENCE_CLASSDESC);
-    private static final ClassDesc REFERENCES_CLASSDESC = ClassDesc.of(RUNTIME_PACKAGE, "References");
-    private static final MethodTypeDesc GET_FIELD_REFERENCE_METHOD_TYPE_DESC = MethodTypeDesc.of(FIELD_REFERENCE_CLASSDESC, ConstantDescs.CD_Object, ConstantDescs.CD_String);
+final class FieldUsageTransformer implements ClassFileTransformer {
 
     @Override
     public byte[] transform(Module           module,
@@ -44,7 +37,7 @@ public final class FieldUsageTransformer implements ClassFileTransformer {
         ClassFile classFile = ClassFile.of();
         ClassModel classModel = classFile.parse(classfileBuffer);
 
-        byte[] result = classFile.transformClass(classModel, ClassTransform.transformingMethodBodies(
+        return classFile.transformClass(classModel, ClassTransform.transformingMethodBodies(
                 (CodeBuilder codeBuilder, CodeElement codeElement) -> {
             if (codeElement instanceof FieldInstruction fieldInstruction) {
                 FieldRefEntry fieldRefEntry = fieldInstruction.field();
@@ -138,15 +131,13 @@ public final class FieldUsageTransformer implements ClassFileTransformer {
                         // [...]
                         break;
                 }
-            } // TODO array instructions? or should these be handled in a different class?
+            }
 
             else {
                 // proceed with normal code
                 codeBuilder.with(codeElement);
             }
         }));
-
-        return result;
     }
 
     private static boolean isPrimitiveLong(ClassDesc type) {

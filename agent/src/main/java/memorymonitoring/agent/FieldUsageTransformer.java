@@ -149,10 +149,6 @@ public final class FieldUsageTransformer implements ClassFileTransformer {
         return result;
     }
 
-    private static boolean isCategory2Type(ClassDesc type) {
-        return isPrimitiveLong(type) || isPrimitiveDouble(type);
-    }
-
     private static boolean isPrimitiveLong(ClassDesc type) {
         return ConstantDescs.CD_long.equals(type);
     }

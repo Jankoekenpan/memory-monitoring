@@ -31,6 +31,7 @@ public class Main {
 
         Main main = new Main();
 
+        // TODO these FieldReferences should not be necessary anymore.
         FieldReference instanceFieldRef = References.getFieldReference(main, "instanceField");
         Permissions.setPermission(instanceFieldRef, Access.WRITE);
         FieldReference objectArrayFieldRef = References.getFieldReference(main, "objectArray");

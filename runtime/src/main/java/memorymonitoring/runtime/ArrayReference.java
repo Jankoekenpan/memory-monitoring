@@ -1,6 +1,5 @@
 package memorymonitoring.runtime;
 
-
 import org.jspecify.annotations.Nullable;
 
 import java.lang.ref.WeakReference;

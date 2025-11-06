@@ -1,6 +1,3 @@
-/*
- (C) COPYRIGHT 2025 TECHNOLUTION BV, GOUDA NL
- */
 package memorymonitoring.agent;
 
 import java.lang.classfile.ClassFile;

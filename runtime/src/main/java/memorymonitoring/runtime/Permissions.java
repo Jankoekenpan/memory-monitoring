@@ -40,9 +40,13 @@ public final class Permissions {
 
     // TODO overload setFieldPermission with (Thread, Object, String, Access) -> void
     // TODO overload setArrayPermission with (Thread Object, int, Access) -> void
-    public static void setPermission(Thread thread, Reference reference, Access access) {
+    public static void setPermission(Thread thread, Reference reference, Access accessLevel) {
         // TODO should log or throw an exception when other threads already holds conflicting access.
-        permissions.computeIfAbsent(reference, _ -> new WeakHashMap<>()).put(thread, access);
+
+        String message = String.format("Thread %s: Setting %s to access level %s.", thread.getName(), reference, accessLevel);
+        LOGGER.info(message);
+
+        permissions.computeIfAbsent(reference, _ -> new WeakHashMap<>()).put(thread, accessLevel);
     }
 
     // Called by bytecode-transformed code

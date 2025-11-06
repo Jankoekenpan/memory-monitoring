@@ -19,11 +19,7 @@ public class Main {
     public static void main(String[] args) {
         IO.println("Hello, World!");
 
-        FieldReference staticFieldRef = References.getFieldReference(Main.class, "staticField");
-        Permissions.setPermission(staticFieldRef, Access.WRITE);
-        FieldReference anotherStaticFieldRef = References.getFieldReference(Main.class, "staticLongArray");
-        Permissions.setPermission(anotherStaticFieldRef, Access.READ);
-
+        // TODO make it so this is also no longer needed.
         ArrayReference longsAtIndex0 = References.getArrayReference(staticLongArray, 0);
         ArrayReference longsAtIndex1 = References.getArrayReference(staticLongArray, 1);
         Permissions.setPermission(longsAtIndex0, Access.WRITE);
@@ -31,11 +27,6 @@ public class Main {
 
         Main main = new Main();
 
-        // TODO these FieldReferences should not be necessary anymore.
-        FieldReference instanceFieldRef = References.getFieldReference(main, "instanceField");
-        Permissions.setPermission(instanceFieldRef, Access.WRITE);
-        FieldReference objectArrayFieldRef = References.getFieldReference(main, "objectArray");
-        Permissions.setPermission(objectArrayFieldRef, Access.READ);
         ArrayReference objectsAtIndex0 = References.getArrayReference(main.objectArray, 0);
         Permissions.setPermission(objectsAtIndex0, Access.WRITE);
 

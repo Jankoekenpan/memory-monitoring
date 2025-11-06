@@ -1,12 +1,21 @@
 package memorymonitoring.agent;
 
+import java.lang.classfile.AccessFlags;
 import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.ClassElement;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassModel;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
+import java.lang.classfile.CodeTransform;
 import java.lang.classfile.FieldModel;
+import java.lang.classfile.Instruction;
 import java.lang.classfile.MethodModel;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.instruction.InvokeInstruction;
+import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.instrument.ClassFileTransformer;
@@ -46,61 +55,106 @@ final class InitializerTransformer implements ClassFileTransformer {
         instanceFields.trimToSize();
         staticFields.trimToSize();
 
+        boolean hasClassInitializer = classModel.methods().stream().anyMatch(InitializerTransformer::isClassInitializer);
+        ClassDesc thisClass = classModel.thisClass().asSymbol();
+        Optional<ClassEntry> superClass = classModel.superclass();
+
+        // TODO does not yet seem to generate the bytecode which we want.
+        // TODO how2fix?
         return classFile.transformClass(classModel, (ClassBuilder classBuilder, ClassElement classElement) -> {
+            // Add class initialiser to the classs, if one is absent.
+            if (!hasClassInitializer) {
+                classBuilder.withMethodBody(
+                        ConstantDescs.CLASS_INIT_NAME,
+                        ConstantDescs.MTD_void,
+                        AccessFlag.PUBLIC.mask() | AccessFlag.STATIC.mask(),
+                        (CodeBuilder codeBuilder) -> instrumentStaticInitializer(codeBuilder, thisClass, staticFields)
+                );
+            } // otherwise, static initialiser will be instrumented.
 
             if (classElement instanceof MethodModel maybeConstructorMethod && isConstructor(maybeConstructorMethod)) {
                 MethodTypeDesc methodTypeDescriptor = maybeConstructorMethod.methodTypeSymbol();
                 int flags = maybeConstructorMethod.flags().flagsMask();
                 Optional<CodeModel> code = maybeConstructorMethod.code();
-                classBuilder.withMethodBody(ConstantDescs.INIT_NAME, methodTypeDescriptor, flags, codeBuilder -> {
-                    if (code.isPresent()) {
-                        CodeModel codeModel = code.get();
-                        // Set Access.WRITE permission for all instance fields.
-                        // Note, the generated code does not contain an extra loop; the field permissions are just written inlined/unrolled.
+                CodeModel codeModel = code.get();
 
-                        // [...]
-                        for (FieldModel instanceFieldModel : instanceFields) {
-                            // [...]
-                            codeBuilder.aload(0);
-                            // [..., this]
-                            codeBuilder.ldc(instanceFieldModel.fieldName().stringValue());
-                            // [..., this, "someField"]
-                            writeAccess(codeBuilder);
-                            // [..., this, "someField, Access.WRITE]
-                            invokeSetFieldPermission(codeBuilder);
-                            // [...]
+                /*  TODO it seems we cannot use 'this' yet _before_ the super constructor call? lame.
+                    Error: Unable to initialize main class memorymonitoring.example.Main
+                    Caused by: java.lang.VerifyError: Bad type on operand stack
+                    Exception Details:
+                      Location:
+                        memorymonitoring/example/Main.<init>()V @6: invokestatic
+                      Reason:
+                        Type uninitializedThis (current frame, stack[0]) is not assignable to 'java/lang/Object'
+                      Current Frame:
+                        bci: @6
+                        flags: { flagThisUninit }
+                        locals: { uninitializedThis }
+                        stack: { uninitializedThis, 'java/lang/String', 'memorymonitoring/runtime/Access' }
+                      Bytecode:
+                        0000000: 2a12 3eb2 0025 b800 9b2a 128e b200 25b8
+                        0000010: 009b 2a12 40b2 0025 b800 9b2a b700 012a
+                        0000020: 1400 0948 5912 8eb2 0025 b800 9227 b500
+                        0000030: 0b2a 04bd 0002 5f59 1240 b200 25b8 0092
+                        0000040: 5fb5 0011 b1
+                 */
+//                classBuilder.withMethod(ConstantDescs.INIT_NAME, methodTypeDescriptor, flags, methodBuilder -> methodBuilder.transformCode(codeModel, new CodeTransform() {
+//                    @Override
+//                    public void accept(CodeBuilder codeBuilder, CodeElement element) {
+//                        codeBuilder.with(element);
+//                    }
+//                    @Override
+//                    public void atStart(CodeBuilder codeBuilder) {
+//                        for (FieldModel instanceFieldModel : instanceFields) {
+//                            // [...]
+//                            codeBuilder.aload(0);
+//                            // [..., this]
+//                            codeBuilder.ldc(instanceFieldModel.fieldName().stringValue());
+//                            // [..., this, "someField"]
+//                            writeAccess(codeBuilder);
+//                            // [..., this, "someField", Access.WRITE]
+//                            invokeSetFieldPermission(codeBuilder);
+//                            // [...]
+//                        }
+//                    }
+//                }));
+
+                classBuilder.withMethod(ConstantDescs.INIT_NAME, methodTypeDescriptor, flags, methodBuilder -> methodBuilder.transformCode(codeModel, new CodeTransform() {
+                    @Override
+                    public void accept(CodeBuilder codeBuilder, CodeElement codeElement) {
+                        if (codeElement instanceof InvokeInstruction instruction && isInvokeSuperConstructor(superClass, instruction)) {
+                            codeBuilder.with(instruction); // invoke super constructor
+
+                            // Grant write permission (has to occur after super constructor call).
+                            for (FieldModel instanceFieldModel : instanceFields) {
+                                // [...]
+                                codeBuilder.aload(0);
+                                // [..., this]
+                                codeBuilder.ldc(instanceFieldModel.fieldName().stringValue());
+                                // [..., this, "someField"]
+                                writeAccess(codeBuilder);
+                                // [..., this, "someField", Access.WRITE]
+                                invokeSetFieldPermission(codeBuilder);
+                                // [...]
+                            }
+                        } else {
+                            codeBuilder.with(codeElement);
                         }
-                        // [...]
-
-                        // Write the original constructor instructions afterwards.
-                        codeModel.forEach(codeBuilder::with);
                     }
-                });
+                }));
+
             }
 
-            else if (classElement instanceof MethodModel maybeClassInitializerMethod && isClassInitializer(maybeClassInitializerMethod)) {
+            else if (hasClassInitializer && classElement instanceof MethodModel maybeClassInitializerMethod && isClassInitializer(maybeClassInitializerMethod)) {
                 int flags = maybeClassInitializerMethod.flags().flagsMask();
                 Optional<CodeModel> code = maybeClassInitializerMethod.code();
-                classBuilder.withMethodBody(ConstantDescs.CLASS_INIT_NAME, ConstantDescs.MTD_void, flags, codeBuilder -> {
+                classBuilder.withMethodBody(ConstantDescs.CLASS_INIT_NAME, ConstantDescs.MTD_void, flags, (CodeBuilder codeBuilder) -> {
                     if (code.isPresent()) {
                         CodeModel codeModel = code.get();
                         // Set Access.WRITE permission for all static fields.
                         // Note, the generated code does not contain an extra loop; the field permissions are just written inlined/unrolled.
 
-                        // [...]
-                        for (FieldModel staticFieldModel : staticFields) {
-                            // [...]
-                            codeBuilder.ldc(classModel.thisClass().asSymbol());
-                            // [..., Owner.class]
-                            codeBuilder.ldc(staticFieldModel.fieldName().stringValue());
-                            // [..., Owner.class, "someField"]
-                            writeAccess(codeBuilder);
-                            // [..., Owner.class, "someField, Access.WRITE]
-                            invokeSetFieldPermission(codeBuilder);
-                            // [...]
-                        }
-                        codeBuilder.pop();
-                        // [...]
+                        instrumentStaticInitializer(codeBuilder, thisClass, staticFields);
 
                         // Write the original class initializer instructions afterwards.
                         codeModel.forEach(codeBuilder::with);
@@ -115,9 +169,35 @@ final class InitializerTransformer implements ClassFileTransformer {
         });
     }
 
+    private static boolean isInvokeSuperConstructor(Optional<ClassEntry> superClass, InvokeInstruction invokeInstruction) {
+        if (superClass.isEmpty()) return false;
+
+        return invokeInstruction.opcode() == Opcode.INVOKESPECIAL
+                && !invokeInstruction.isInterface()
+                && invokeInstruction.name().equalsString(ConstantDescs.INIT_NAME)
+                && invokeInstruction.owner().equals(superClass.get())
+                && invokeInstruction.typeSymbol().returnType().equals(ConstantDescs.CD_void);
+    }
+
+    private static void instrumentStaticInitializer(CodeBuilder codeBuilder, ClassDesc thisClass, List<FieldModel> staticFields) {
+        // [...]
+        for (FieldModel staticFieldModel : staticFields) {
+            // [...]
+            codeBuilder.ldc(thisClass);
+            // [..., Owner.class]
+            codeBuilder.ldc(staticFieldModel.fieldName().stringValue());
+            // [..., Owner.class, "someField"]
+            writeAccess(codeBuilder);
+            // [..., Owner.class, "someField, Access.WRITE]
+            invokeSetFieldPermission(codeBuilder);
+            // [...]
+        }
+        // [...]
+    }
+
     private static boolean isConstructor(MethodModel methodModel) {
         return methodModel.methodName().equalsString(ConstantDescs.INIT_NAME)
-                && !methodModel.flags().has(AccessFlag.STATIC)
+                && !methodModel.flags().has(AccessFlag.STATIC) && !methodModel.flags().has(AccessFlag.ABSTRACT)
                 && methodModel.methodTypeSymbol().returnType().equals(ConstantDescs.CD_void);
     }
 

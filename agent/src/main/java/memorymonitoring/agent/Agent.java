@@ -12,6 +12,8 @@ public class Agent {
             System.out.println("Agent loaded at startup.");
             inst.addTransformer(new FieldUsageTransformer());
             inst.addTransformer(new ArrayUsageTransformer());
+            inst.addTransformer(new InitializerTransformer());
+            inst.addTransformer(new NewArrayTransformer());
         } catch (Throwable ex) {
             ex.printStackTrace();
         }

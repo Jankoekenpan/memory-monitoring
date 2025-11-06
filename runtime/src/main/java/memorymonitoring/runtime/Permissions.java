@@ -13,15 +13,40 @@ public final class Permissions {
     // Reference objects will be gc'ed once their owningInstance is no longer reachable,
     // because FieldReference and ArrayReference objects can only be created through the References factory.
     private static final Map<Reference, Map<Thread, Access>> permissions = Collections.synchronizedMap(new WeakHashMap<>());
+    // TODO probably want to split this up into two maps:
+    // WeakHashMap<Object, Map<FieldName, WeakHashMap<Thread, FractionalPermission>>>
+    // WeakHashMap<ArrayObject, RangeMap<WeakHashMap<Thread, FractionalPermission>>>
+    // ... where RangeMap is like a Bitree - it's a binary tree which can split ranges in half. It's like the 1D version of a 2D Quadtree or 3D Octree.
+    // Once we do this, we can delete our Reference abstraction and its implementations.
 
     private Permissions() {}
 
+    // Called by bytecode-transformed code
+    public static void setFieldPermission(Object owningInstance, String fieldName, Access access) {
+        setPermission(References.getFieldReference(owningInstance, fieldName), access);
+    }
+
+    // TODO implement the bytecode transformation for this.
+    // called by bytecode-transformed code
+    public static void setArrayPermission(Object arrayInstance, int index, Access access) {
+        setPermission(References.getArrayReference(arrayInstance, index), access);
+    }
+
+    /** @deprecated prefer {@linkplain #setFieldPermission(Object, String, Access)} or {@linkplain #setArrayPermission(Object, int, Access)}. */
+    @Deprecated // TODO remove this one?
     public static void setPermission(Reference reference, Access access) {
         setPermission(Thread.currentThread(), reference, access);
     }
 
-    public static void setPermission(Thread thread, Reference reference, Access access) {
-        permissions.computeIfAbsent(reference, _ -> new WeakHashMap<>()).put(thread, access);
+    // TODO overload setFieldPermission with (Thread, Object, String, Access) -> void
+    // TODO overload setArrayPermission with (Thread Object, int, Access) -> void
+    public static void setPermission(Thread thread, Reference reference, Access accessLevel) {
+        // TODO should log or throw an exception when other threads already holds conflicting access.
+
+        String message = String.format("Thread %s: Setting %s to access level %s.", thread.getName(), reference, accessLevel);
+        LOGGER.info(message);
+
+        permissions.computeIfAbsent(reference, _ -> new WeakHashMap<>()).put(thread, accessLevel);
     }
 
     // Called by bytecode-transformed code
@@ -39,21 +64,13 @@ public final class Permissions {
     }
 
     // Called by bytecode-transformed code
-    public static void logRead(Reference reference) {
-        logRead(Thread.currentThread(), reference);
+    public static void logFieldAccess(Object owningInstance, String fieldName, Access accessLevel) {
+        logAccess(Thread.currentThread(), References.getFieldReference(owningInstance, fieldName), accessLevel);
     }
 
     // Called by bytecode-transformed code
-    public static void logWrite(Reference reference) {
-        logWrite(Thread.currentThread(), reference);
-    }
-
-    private static void logRead(Thread thread, Reference reference) {
-        logAccess(thread, reference, Access.READ);
-    }
-
-    private static void logWrite(Thread thread, Reference reference) {
-        logAccess(thread, reference, Access.WRITE);
+    public static void logArrayAccess(Object owningArray, int index, Access accessLevel) {
+        logAccess(Thread.currentThread(), References.getArrayReference(owningArray, index), accessLevel);
     }
 
     private static void logAccess(Thread thread, Reference reference, Access accessLevel) {

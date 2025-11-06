@@ -16,7 +16,7 @@ import java.lang.constant.ConstantDescs;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.security.ProtectionDomain;
-import static memorymonitoring.agent.RuntimeApiConstants.*;
+import static memorymonitoring.agent.RuntimeApiHelper.*;
 
 final class FieldUsageTransformer implements ClassFileTransformer {
 
@@ -55,9 +55,9 @@ final class FieldUsageTransformer implements ClassFileTransformer {
                         // [..., objectRef, objectRef]
                         codeBuilder.ldc(fieldName.stringValue());
                         // [..., objectRef, objectRef, fieldName]
-                        codeBuilder.invokestatic(REFERENCES_CLASSDESC, "getFieldReference", GET_FIELD_REFERENCE_METHOD_TYPE_DESC, false);
-                        // [..., objectRef, FieldReference]
-                        codeBuilder.invokestatic(PERMISSIONS_CLASSDESC, "logRead", LOG_METHOD_TYPE_DESC, false);
+                        readAccess(codeBuilder);
+                        // [..., objectRef, objectRef, fieldName, Access.READ]
+                        invokeLogFieldAccess(codeBuilder);
                         // [..., objectRef]
                         codeBuilder.with(codeElement);
                         // [..., fieldValue]
@@ -83,9 +83,9 @@ final class FieldUsageTransformer implements ClassFileTransformer {
                         // [..., newValue, objectRef, objectRef]
                         codeBuilder.ldc(fieldName.stringValue());
                         // [..., newValue, objectRef, objectRef, fieldName]
-                        codeBuilder.invokestatic(REFERENCES_CLASSDESC, "getFieldReference", GET_FIELD_REFERENCE_METHOD_TYPE_DESC, false);
-                        // [..., newValue, objectRef, FieldReference]
-                        codeBuilder.invokestatic(PERMISSIONS_CLASSDESC, "logWrite", LOG_METHOD_TYPE_DESC, false);
+                        writeAccess(codeBuilder);
+                        // [..., newValue, objectRef, objectRef, fieldName, Access.WRITE]
+                        invokeLogFieldAccess(codeBuilder);
                         // [..., newValue, objectRef]
                         if (isPrimitiveLong(fieldType)) {
                             codeBuilder.lload(localVariableTableSlot);
@@ -107,9 +107,9 @@ final class FieldUsageTransformer implements ClassFileTransformer {
                         // [..., Owner.class]
                         codeBuilder.ldc(fieldName.stringValue());
                         // [..., Owner.class, fieldName]
-                        codeBuilder.invokestatic(REFERENCES_CLASSDESC, "getFieldReference", GET_FIELD_REFERENCE_METHOD_TYPE_DESC, false);
-                        // [..., FieldReference]
-                        codeBuilder.invokestatic(PERMISSIONS_CLASSDESC, "logRead", LOG_METHOD_TYPE_DESC, false);
+                        readAccess(codeBuilder);
+                        // [..., Owner.class, fieldName, Access.READ]
+                        invokeLogFieldAccess(codeBuilder);
                         // [...]
                         codeBuilder.with(codeElement);
                         // [..., fieldValue]
@@ -123,9 +123,9 @@ final class FieldUsageTransformer implements ClassFileTransformer {
                         // [..., newValue, Owner.class]
                         codeBuilder.ldc(fieldName.stringValue());
                         // [..., newValue, Owner.class, fieldName]
-                        codeBuilder.invokestatic(REFERENCES_CLASSDESC, "getFieldReference", GET_FIELD_REFERENCE_METHOD_TYPE_DESC, false);
-                        // [..., newValue, FieldReference]
-                        codeBuilder.invokestatic(PERMISSIONS_CLASSDESC, "logWrite", LOG_METHOD_TYPE_DESC, false);
+                        writeAccess(codeBuilder);
+                        // [..., newValue, Owner.class, fieldName, Access.WRITE]
+                        invokeLogFieldAccess(codeBuilder);
                         // [..., newValue]
                         codeBuilder.with(codeElement);
                         // [...]

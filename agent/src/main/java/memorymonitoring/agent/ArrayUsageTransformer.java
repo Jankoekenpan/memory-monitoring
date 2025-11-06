@@ -11,7 +11,7 @@ import java.lang.classfile.instruction.ArrayStoreInstruction;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.security.ProtectionDomain;
-import static memorymonitoring.agent.RuntimeApiConstants.*;
+import static memorymonitoring.agent.RuntimeApiHelper.*;
 
 final class ArrayUsageTransformer implements ClassFileTransformer {
 
@@ -42,9 +42,9 @@ final class ArrayUsageTransformer implements ClassFileTransformer {
                         // [..., arr, index]
                         codeBuilder.dup2();
                         // [..., arr, index, arr, index]
-                        codeBuilder.invokestatic(REFERENCES_CLASSDESC, "getArrayReference", GET_ARRAY_REFERENCE_METHOD_TYPE_DESC, false);
-                        // [..., arr, index, ArrayReference]
-                        codeBuilder.invokestatic(PERMISSIONS_CLASSDESC, "logRead", LOG_METHOD_TYPE_DESC, false);
+                        readAccess(codeBuilder);
+                        // [..., arr, index, arr, index, Access.READ]
+                        invokeLogArrayAccess(codeBuilder);
                         // [..., arr, index]
                         codeBuilder.with(codeElement);
                         // [..., element]
@@ -61,9 +61,9 @@ final class ArrayUsageTransformer implements ClassFileTransformer {
                         // [..., arr, index]
                         codeBuilder.dup2();
                         // [..., arr, index, arr, index]
-                        codeBuilder.invokestatic(REFERENCES_CLASSDESC, "getArrayReference", GET_ARRAY_REFERENCE_METHOD_TYPE_DESC, false);
-                        // [..., arr, index, ArrayReference]
-                        codeBuilder.invokestatic(PERMISSIONS_CLASSDESC, "logWrite", LOG_METHOD_TYPE_DESC, false);
+                        writeAccess(codeBuilder);
+                        // [..., arr, index, arr, index, Access.WRITE]
+                        invokeLogArrayAccess(codeBuilder);
                         // [..., arr, index]
                         codeBuilder.loadLocal(elementType, localVariableTableSlot);
                         // [..., arr, index, value]

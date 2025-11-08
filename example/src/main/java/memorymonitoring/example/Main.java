@@ -1,9 +1,7 @@
 package memorymonitoring.example;
 
 import memorymonitoring.runtime.Access;
-import memorymonitoring.runtime.ArrayReference;
 import memorymonitoring.runtime.Permissions;
-import memorymonitoring.runtime.References;
 
 import java.util.Arrays;
 
@@ -18,12 +16,7 @@ public class Main {
     public static void main(String[] args) {
         IO.println("Hello, World!");
 
-        // TODO make it so this is also no longer needed.
-        Permissions.setArrayPermission(staticLongArray, 0, Access.WRITE);
-
         Main main = new Main();
-
-        Permissions.setArrayPermission(main.objectArray, 0, Access.WRITE);
 
         // let's cause some violations on purpose (field):
         Permissions.setFieldPermission(Main.class, "staticField", Access.READ);
@@ -46,6 +39,10 @@ public class Main {
         IO.println("staticLongArray = " + Arrays.toString(staticLongArray));
         main.objectArray[0] = "Projector Inc.";
         IO.println("objectArray = " + Arrays.toString(main.objectArray));
+
+        int[][] matrix = {{1, 2}, {3, 4}};
+        matrix[1][1] = 5;
+        IO.println("matrix = " + Arrays.deepToString(matrix));
     }
 
 }

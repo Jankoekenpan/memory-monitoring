@@ -17,7 +17,10 @@ public final class Permissions {
 
     private static final Logger LOGGER = Logger.getLogger(Permissions.class.getName());
 
-    private static final WeakHashMap<Object, WeakHashMap<Thread, Map<String, Access>>> fieldPermissions = new WeakHashMap<>();
+    // TODO could make use of Collections.synchronizedMap, if we can be sure that this won't cause deadlocks.
+    // TODO i.e. while being locked on one of the instances, the other instance should never be accessed.
+    // TODO I think our access patterns (and access patterns of generated code) is like this, so we could do this refactor (and remove a bunch of synchronized modifiers from methods in this class).
+    private static final WeakHashMap<Object, WeakHashMap<Thread, Map<String, Access>>> fieldPermissions = new WeakHashMap<>();  // For static fields, the owning Object is an instance of java.lang.Class.
     private static final WeakHashMap<Object, WeakHashMap<Thread, SegmentTree<Access>>> arrayPermissions = new WeakHashMap<>();
 
     private Permissions() {}
@@ -39,9 +42,19 @@ public final class Permissions {
                 .put(fieldName, access); // TODO when upgrading permission, log warning?
     }
 
-    // probably not called by instrumented code?
+    // not called by instrumented code (yet).
     public static void setArrayPermission(Object arrayInstance, int index, Access access) {
         setArrayPermission(arrayInstance, index, index + 1, access);
+    }
+
+    // not called by instrumented code (yet).
+    public static void setArrayPermission(Object arrayInstance, int indexFrom, int indexTo, Access access) {
+        setArrayPermission(Thread.currentThread(), arrayInstance, indexFrom, indexTo, access);
+    }
+
+    @CalledByInstrumentedCode
+    public static void setArrayPermissionWholeArray(Object arrayInstance, Access access) {
+        setArrayPermission(Thread.currentThread(), arrayInstance, 0, Array.getLength(arrayInstance), access);
     }
 
     /**
@@ -51,11 +64,6 @@ public final class Permissions {
      * @param indexTo end index - exclusive
      * @param access the permission level to be set
      */
-    @CalledByInstrumentedCode
-    public static void setArrayPermission(Object arrayInstance, int indexFrom, int indexTo, Access access) {
-        setArrayPermission(Thread.currentThread(), arrayInstance, indexFrom, indexTo, access);
-    }
-
     public static synchronized void setArrayPermission(Thread thread, Object arrayInstance, int indexFrom, int indexTo, Access access) {
         String message = String.format("Giving %s permission to thread %s at array range %s[%d, %d)", access, thread.getName(), arrayInstance, indexFrom, indexTo);
         LOGGER.info(message);
@@ -87,6 +95,8 @@ public final class Permissions {
 
     @CalledByInstrumentedCode
     public static void logFieldAccess(Object owningInstance, String fieldName, Access observedAccessLevel) {
+        if (owningInstance == Access.class && observedAccessLevel == Access.READ) return; // always allow reading these enum values.
+
         Thread thread = Thread.currentThread();
         Access grantedAccess = getFieldPermission(thread, owningInstance, fieldName);
         Object formattedOwningInstance = owningInstance instanceof Class<?> clazz ? clazz.getName() : owningInstance;
@@ -98,7 +108,7 @@ public final class Permissions {
         logArrayAccess(owningArray, index, index + 1, observedAccessLevel);
     }
 
-    @CalledByInstrumentedCode // TODO System.arrayCopy
+    @CalledByInstrumentedCode // TODO instrument calls to System.arrayCopy (check for read access in the one array, write access in the other array)
     public static void logArrayAccess(Object owningArray, int indexFrom, int indexTo, Access observedAccessLevel) {
         Thread thread = Thread.currentThread();
         Access grantedAccess = getArrayPermission(thread, owningArray, indexFrom, indexTo);

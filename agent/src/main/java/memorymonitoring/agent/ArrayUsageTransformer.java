@@ -71,6 +71,8 @@ final class ArrayUsageTransformer implements ClassFileTransformer {
                         // [...]
                     }
 
+                    // TODO System.arrayCopy
+
                     else {
                         // proceed with normal code
                         codeBuilder.with(codeElement);

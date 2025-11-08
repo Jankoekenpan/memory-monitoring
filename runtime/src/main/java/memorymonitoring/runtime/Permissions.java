@@ -29,7 +29,9 @@ public final class Permissions {
 
     // probably not called by instrumented code?
     public static void setArrayPermission(Object arrayInstance, int index, Access access) {
-        setArrayPermission(arrayInstance, index, index + 1, access);
+        setPermission(References.getArrayReference(arrayInstance, index), access);
+        // TODO
+        //setArrayPermission(arrayInstance, index, index + 1, access);
     }
 
     /**
@@ -73,12 +75,12 @@ public final class Permissions {
         }
     }
 
-    // Called by bytecode-transformed code
+    @CalledByInstrumentedCode
     public static void logFieldAccess(Object owningInstance, String fieldName, Access accessLevel) {
         logAccess(Thread.currentThread(), References.getFieldReference(owningInstance, fieldName), accessLevel);
     }
 
-    // Called by bytecode-transformed code
+    @CalledByInstrumentedCode
     public static void logArrayAccess(Object owningArray, int index, Access accessLevel) {
         logAccess(Thread.currentThread(), References.getArrayReference(owningArray, index), accessLevel);
     }

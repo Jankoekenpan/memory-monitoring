@@ -2,7 +2,6 @@ package memorymonitoring.example;
 
 import memorymonitoring.runtime.Access;
 import memorymonitoring.runtime.ArrayReference;
-import memorymonitoring.runtime.FieldReference;
 import memorymonitoring.runtime.Permissions;
 import memorymonitoring.runtime.References;
 
@@ -20,17 +19,15 @@ public class Main {
         IO.println("Hello, World!");
 
         // TODO make it so this is also no longer needed.
-        ArrayReference longsAtIndex0 = References.getArrayReference(staticLongArray, 0);
-        Permissions.setPermission(longsAtIndex0, Access.WRITE);
+        Permissions.setArrayPermission(staticLongArray, 0, Access.WRITE);
 
         Main main = new Main();
 
-        ArrayReference objectsAtIndex0 = References.getArrayReference(main.objectArray, 0);
-        Permissions.setPermission(objectsAtIndex0, Access.WRITE);
+        Permissions.setArrayPermission(main.objectArray, 0, Access.WRITE);
 
         // let's cause some violations on purpose (field):
-        Permissions.setPermission(References.getFieldReference(Main.class, "staticField"), Access.READ);
-        Permissions.setPermission(References.getFieldReference(main, "instanceField"), Access.NONE);
+        Permissions.setFieldPermission(Main.class, "staticField", Access.READ);
+        Permissions.setFieldPermission(main, "instanceField", Access.NONE);
 
         main.instanceField += 1;
         main.instanceDouble = 1.0;
@@ -40,10 +37,8 @@ public class Main {
         IO.println("staticField = " + Main.staticField);
 
         // let's cause some violations on purpose (array):
-        ArrayReference longsAtIndex1 = References.getArrayReference(staticLongArray, 1);
-        ArrayReference longsAtIndex2 = References.getArrayReference(staticLongArray, 2);
-        Permissions.setPermission(longsAtIndex1, Access.READ);
-        Permissions.setPermission(longsAtIndex2, Access.NONE);
+        Permissions.setArrayPermission(staticLongArray, 1, Access.READ);
+        Permissions.setArrayPermission(staticLongArray, 2, Access.NONE);
 
         staticLongArray[0] += 1L;
         staticLongArray[1] += 1L;

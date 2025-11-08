@@ -3,6 +3,7 @@ package memorymonitoring.example;
 import memorymonitoring.runtime.Access;
 import memorymonitoring.runtime.Permissions;
 
+import java.lang.reflect.Array;
 import java.util.Arrays;
 
 public class Main {
@@ -48,6 +49,9 @@ public class Main {
         IO.println("matrix = " + Arrays.deepToString(matrix));
 
         int[][] grid = new int[10][10];
+        IO.println("grid = " + Arrays.deepToString(grid));
+
+        Array.setInt(grid[0], 0, 1);
         IO.println("grid = " + Arrays.deepToString(grid));
     }
 

@@ -2,6 +2,7 @@ package memorymonitoring.runtime;
 
 import memorymonitoring.util.CalledByInstrumentedCode;
 import memorymonitoring.util.SegmentTree;
+import memorymonitoring.util.WeakIdentityHashMap;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
@@ -20,8 +21,8 @@ public final class Permissions {
     // TODO could make use of Collections.synchronizedMap, if we can be sure that this won't cause deadlocks.
     // TODO i.e. while being locked on one of the instances, the other instance should never be accessed.
     // TODO I think our access patterns (and access patterns of generated code) is like this, so we could do this refactor (and remove a bunch of synchronized modifiers from methods in this class).
-    private static final WeakHashMap<Object, WeakHashMap<Thread, Map<String, Access>>> fieldPermissions = new WeakHashMap<>();  // For static fields, the owning Object is an instance of java.lang.Class.
-    private static final WeakHashMap<Object, WeakHashMap<Thread, SegmentTree<Access>>> arrayPermissions = new WeakHashMap<>();
+    private static final WeakIdentityHashMap<Object, WeakHashMap<Thread, Map<String, Access>>> fieldPermissions = new WeakIdentityHashMap<>();  // For static fields, the owning Object is an instance of java.lang.Class.
+    private static final WeakIdentityHashMap<Object, WeakHashMap<Thread, SegmentTree<Access>>> arrayPermissions = new WeakIdentityHashMap<>();
 
     private Permissions() {}
 

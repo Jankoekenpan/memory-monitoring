@@ -32,3 +32,4 @@ java -javaagent:.\agent\target\agent-1.0-SNAPSHOT.jar -cp .\runtime\target\runti
 ## Future work
 - Un-hardcode classes to be instrumented.
 - Fractional permissions? split & merge support?
+- Find a good way for dealing with instance field assignments before super constructor calls (flexible constructor bodies).

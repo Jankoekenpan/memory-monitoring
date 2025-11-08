@@ -1,10 +1,11 @@
 package memorymonitoring.util;
 
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.util.function.BinaryOperator;
 
-public final class SegmentTree<T> {
+public final class SegmentTree<@NonNull T> {
 
     private final int size;
     private final BinaryOperator<@Nullable T> combiner;
@@ -12,6 +13,7 @@ public final class SegmentTree<T> {
 
     public SegmentTree(int size, T initialValue, BinaryOperator<@Nullable T> combiner) {
         assert size >= 0 : "size must be positive";
+        assert initialValue != null : "initial value cannot be null";
 
         this.size = size;
         this.combiner = combiner;
@@ -19,6 +21,8 @@ public final class SegmentTree<T> {
     }
 
     private static class Node<T> {
+         // Invariant: ((value == null) == (left != null)) && ((value == null) == (right != null))
+
          private final int start, end; //inclusive, exclusive
          private T value;
          private Node<T> left, right;
@@ -29,20 +33,12 @@ public final class SegmentTree<T> {
              this.value = value;
          }
 
-         Node<T> ensureLeft() {
-             if (left == null) {
-                 left = new Node<>(start, mid(), this.value);
-                 left.value = this.value;
+         void split() {
+             if (value != null) {
+                 left = new Node<>(start, mid(), value);
+                 right = new Node<>(mid(), end, value);
+                 value = null;
              }
-             return left;
-         }
-
-         Node<T> ensureRight() {
-             if (right == null) {
-                 right = new Node<>(mid(), end, this.value);
-                 right.value = this.value;
-             }
-             return right;
          }
 
          int mid() {
@@ -60,6 +56,7 @@ public final class SegmentTree<T> {
         if (start == end) {
             return;
         }
+
         if (node.start == start && node.end == end) {
             node.value = value;
             node.left = null;
@@ -68,24 +65,25 @@ public final class SegmentTree<T> {
         }
 
         int nodeMid = node.mid();
-
+        node.split();
         if (end < nodeMid) {
             // entirely in the left half
-            set(node.ensureLeft(), start, end, value);
+            set(node.left, start, end, value);
         } else if (start >= nodeMid) {
             // entirely in the right half
-            set(node.ensureRight(), start, end, value);
+            set(node.right, start, end, value);
         } else {
-            // spawn midpoint
-            set(node.ensureLeft(), start, nodeMid, value);
-            set(node.ensureRight(), nodeMid, end, value);
+            // range overlaps with both halves
+            set(node.left, start, nodeMid, value);
+            set(node.right, nodeMid, end, value);
         }
     }
 
     public @Nullable T get(int start, int end) {
         assert 0 <= start && start <= end && end <= size : "Invalid start-end range.";
 
-        return get(root, start, end);
+        T value = get(root, start, end);
+        return value;
     }
 
     private @Nullable T get(Node<T> node, int start, int end) {
@@ -93,24 +91,27 @@ public final class SegmentTree<T> {
             // out of bounds
             return null;
         }
-        if (node.start == start && end == node.end) {
-            // node exactly covers range
-            return node.value;
-        }
 
         int nodeMid = node.mid();
 
-        if (end < nodeMid) {
+        if (node.value != null && node.start <= start && end <= node.end) {
+            // node covers range and it has a value
+            return node.value;
+        }
+
+        T result; // improve debugging.
+        if (end <= nodeMid) {
             // entirely in the left half
-            return get(node.left, start, end);
+            result = get(node.left, start, end);
         } else if (start >= nodeMid) {
             // entirely in the left half
-            return get(node.right, start, end);
+            result = get(node.right, start, end);
         } else {
             // combine values from left and right halves
             @Nullable T valLeft = get(node.left, start, nodeMid);
             @Nullable T valRight = get(node.right, nodeMid, end);
-            return combiner.apply(valLeft, valRight);
+            result = combiner.apply(valLeft, valRight);
         }
+        return result;
     }
 }

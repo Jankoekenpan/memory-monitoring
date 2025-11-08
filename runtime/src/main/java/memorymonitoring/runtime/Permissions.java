@@ -1,5 +1,7 @@
 package memorymonitoring.runtime;
 
+import memorymonitoring.util.CalledByInstrumentedCode;
+
 import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -16,20 +18,30 @@ public final class Permissions {
     // TODO probably want to split this up into two maps:
     // WeakHashMap<Object, Map<FieldName, WeakHashMap<Thread, FractionalPermission>>>
     // WeakHashMap<ArrayObject, RangeMap<WeakHashMap<Thread, FractionalPermission>>>
-    // ... where RangeMap is like a Bitree - it's a binary tree which can split ranges in half. It's like the 1D version of a 2D Quadtree or 3D Octree.
-    // Once we do this, we can delete our Reference abstraction and its implementations.
+
 
     private Permissions() {}
 
-    // Called by bytecode-transformed code
+    @CalledByInstrumentedCode
     public static void setFieldPermission(Object owningInstance, String fieldName, Access access) {
         setPermission(References.getFieldReference(owningInstance, fieldName), access);
     }
 
-    // TODO implement the bytecode transformation for this.
-    // called by bytecode-transformed code
+    // probably not called by instrumented code?
     public static void setArrayPermission(Object arrayInstance, int index, Access access) {
-        setPermission(References.getArrayReference(arrayInstance, index), access);
+        setArrayPermission(arrayInstance, index, index + 1, access);
+    }
+
+    /**
+     * Set permission for the current thread to a range in the array
+     * @param arrayInstance the array
+     * @param indexFrom starting index - inclusive
+     * @param indexTo end index - exclusive
+     * @param access the permission level to be set.
+     */
+    @CalledByInstrumentedCode
+    public static void setArrayPermission(Object arrayInstance, int indexFrom, int indexTo, Access access) {
+
     }
 
     /** @deprecated prefer {@linkplain #setFieldPermission(Object, String, Access)} or {@linkplain #setArrayPermission(Object, int, Access)}. */

@@ -57,6 +57,19 @@ public final class Permissions {
         setArrayPermission(Thread.currentThread(), arrayInstance, 0, Array.getLength(arrayInstance), access);
     }
 
+    @CalledByInstrumentedCode
+    public static void setArrayPermissionWholeMultiArray(Object multiArray, int dimensions, Access access) {
+        setArrayPermissionWholeArray(multiArray, access);
+
+        if (dimensions > 1) {
+            int length = Array.getLength(multiArray);
+            for (int idx = 0; idx < length; idx += 1) {
+                Object nestedArray = Array.get(multiArray, idx);
+                setArrayPermissionWholeMultiArray(nestedArray, dimensions - 1, access);
+            }
+        }
+    }
+
     /**
      * Set permission for the current thread to a range in the array
      * @param arrayInstance the array

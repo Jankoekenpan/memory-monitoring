@@ -46,6 +46,9 @@ public class Main {
 
         System.arraycopy(matrix[1], 0, matrix[0], 1, 1);
         IO.println("matrix = " + Arrays.deepToString(matrix));
+
+        int[][] grid = new int[10][10];
+        IO.println("grid = " + Arrays.deepToString(grid));
     }
 
 }

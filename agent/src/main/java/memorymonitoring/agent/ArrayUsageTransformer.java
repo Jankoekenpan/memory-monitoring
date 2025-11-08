@@ -133,6 +133,10 @@ final class ArrayUsageTransformer implements ClassFileTransformer {
                         // [...]
                     }
 
+                    // TODO intercept calls to java.lang.reflect.Array methods
+                    // TODO     check read permission for Array.get and Array.getXXX (where XXX is a primitive type)
+                    // TODO     check write permission for Array.set and Array.setXXX (where XXX is a primitive type)
+
                     else {
                         // proceed with normal code
                         codeBuilder.with(codeElement);

@@ -13,6 +13,7 @@ import java.lang.instrument.IllegalClassFormatException;
 import java.security.ProtectionDomain;
 
 import static memorymonitoring.agent.RuntimeApiHelper.invokeSetArrayPermissionWholeArray;
+import static memorymonitoring.agent.RuntimeApiHelper.invokeSetArrayPermissionWholeMultiArray;
 import static memorymonitoring.agent.RuntimeApiHelper.writeAccess;
 
 public final class NewArrayTransformer implements ClassFileTransformer {
@@ -69,17 +70,23 @@ public final class NewArrayTransformer implements ClassFileTransformer {
             else if (codeElement instanceof NewMultiArrayInstruction newMultiArrayInstruction) {
                 // multianewarray: [..., count1, ..., countN] -> [..., arr]
 
+                int dimensions = newMultiArrayInstruction.dimensions();
+
                 // Operand stack:
                 // [..., count1 ..., countN]
                 codeBuilder.with(codeElement);
                 // [..., arr]
                 codeBuilder.dup();
                 // [..., arr, arr]
+                codeBuilder.loadConstant(dimensions);
+                // [..., arr, arr, dimensions]
                 writeAccess(codeBuilder);
-                // [..., arr, arr, Access.WRITE]
-                invokeSetArrayPermissionWholeArray(codeBuilder);
+                // [..., arr, arr, dimensions, Access.WRITE]
+                invokeSetArrayPermissionWholeMultiArray(codeBuilder);
                 // [..., arr]
             }
+
+            // TODO intercept calls to Array.newInstance
 
             else {
                 // Leave all other instructions unchanged.

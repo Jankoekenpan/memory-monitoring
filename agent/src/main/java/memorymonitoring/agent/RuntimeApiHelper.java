@@ -14,6 +14,7 @@ final class RuntimeApiHelper {
     static final MethodTypeDesc SET_ARRAY_PERMISSION_WHOLE_ARRAY_METHOD_TYPE_DESC = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_Object, ACCESS_CLASSDESC);
     static final MethodTypeDesc LOG_FIELD_ACCESS_METHOD_TYPE_DESC = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_Object, ConstantDescs.CD_String, ACCESS_CLASSDESC);
     static final MethodTypeDesc LOG_ARRAY_ACCESS_METHOD_TYPE_DESC = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_Object, ConstantDescs.CD_int, ACCESS_CLASSDESC);
+    static final MethodTypeDesc LOG_ARRAY_ACCESS_RANGE_METHOD_TYPE_DESC = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_Object, ConstantDescs.CD_int, ConstantDescs.CD_int, ACCESS_CLASSDESC);
 
     private RuntimeApiHelper() {
     }
@@ -36,6 +37,10 @@ final class RuntimeApiHelper {
 
     static void invokeLogArrayAccess(CodeBuilder codeBuilder) {
         codeBuilder.invokestatic(PERMISSIONS_CLASSDESC, "logArrayAccess", LOG_ARRAY_ACCESS_METHOD_TYPE_DESC, false);
+    }
+
+    static void invokeLogArrayAccess_range(CodeBuilder codeBuilder) {
+        codeBuilder.invokestatic(PERMISSIONS_CLASSDESC, "logArrayAccess", LOG_ARRAY_ACCESS_RANGE_METHOD_TYPE_DESC, false);
     }
 
     static void invokeSetFieldPermission(CodeBuilder codeBuilder) {

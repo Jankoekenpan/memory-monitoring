@@ -87,14 +87,4 @@ public final class NewArrayTransformer implements ClassFileTransformer {
             }
         }));
     }
-
-    // TODO can we also support System.arrayCopy? probably yes, once we have array range support.
-    // TODO what about java.util.Arrays helpers? probably also yes for the copyOf methods. (range read access)
-
-    // TODO should we care about passing array references to methods in general?
-    // TODO perhaps we can track invokeInstructions and determine whether an array instance was passed to the called method.
-    // TODO we should require write permission to the whole array, in the general case (we can special-case some JDK methods for read-only access)
-
-    // TODO we can also take the philosophy that those library methods should also be instrumented by our agent, and *only* special-case System.arrayCopy.
-    // TODO I like this last idea the best.
 }

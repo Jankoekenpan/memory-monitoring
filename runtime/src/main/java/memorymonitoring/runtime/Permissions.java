@@ -65,7 +65,7 @@ public final class Permissions {
      * @param access the permission level to be set
      */
     public static synchronized void setArrayPermission(Thread thread, Object arrayInstance, int indexFrom, int indexTo, Access access) {
-        String message = String.format("Giving %s permission to thread %s at array range %s[%d, %d)", access, thread.getName(), arrayInstance, indexFrom, indexTo);
+        String message = String.format("Giving %s permission to thread %s at array range %s[%d, %d)", access, thread.getName(), arrayInstanceToString(arrayInstance), indexFrom, indexTo);
         LOGGER.info(message);
 
         // TODO check whether other threads have conflicting permission in this array range?
@@ -108,7 +108,7 @@ public final class Permissions {
         logArrayAccess(owningArray, index, index + 1, observedAccessLevel);
     }
 
-    @CalledByInstrumentedCode // TODO instrument calls to System.arrayCopy (check for read access in the one array, write access in the other array)
+    @CalledByInstrumentedCode
     public static void logArrayAccess(Object owningArray, int indexFrom, int indexTo, Access observedAccessLevel) {
         Thread thread = Thread.currentThread();
         Access grantedAccess = getArrayPermission(thread, owningArray, indexFrom, indexTo);

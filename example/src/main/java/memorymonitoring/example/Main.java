@@ -43,6 +43,9 @@ public class Main {
         int[][] matrix = {{1, 2}, {3, 4}};
         matrix[1][1] = 5;
         IO.println("matrix = " + Arrays.deepToString(matrix));
+
+        System.arraycopy(matrix[1], 0, matrix[0], 1, 1);
+        IO.println("matrix = " + Arrays.deepToString(matrix));
     }
 
 }

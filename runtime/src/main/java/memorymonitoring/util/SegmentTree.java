@@ -8,15 +8,15 @@ import java.util.function.BinaryOperator;
 public final class SegmentTree<@NonNull T> {
 
     private final int size;
-    private final BinaryOperator<@Nullable T> combiner;
+    private final BinaryOperator<@Nullable T> retrievalCombiner;
     private final Node<T> root;
 
-    public SegmentTree(int size, T initialValue, BinaryOperator<@Nullable T> combiner) {
+    public SegmentTree(int size, T initialValue, BinaryOperator<@Nullable T> retrievalCombiner) {
         assert size >= 0 : "size must be positive";
         assert initialValue != null : "initial value cannot be null";
 
         this.size = size;
-        this.combiner = combiner;
+        this.retrievalCombiner = retrievalCombiner;
         this.root = new Node<>(0, size, initialValue);
     }
 
@@ -110,7 +110,7 @@ public final class SegmentTree<@NonNull T> {
             // combine values from left and right halves
             @Nullable T valLeft = get(node.left, start, nodeMid);
             @Nullable T valRight = get(node.right, nodeMid, end);
-            result = combiner.apply(valLeft, valRight);
+            result = retrievalCombiner.apply(valLeft, valRight);
         }
         return result;
     }

@@ -9,13 +9,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public final class SegmentTreeTest {
 
-    private static Access weakestAccess(@Nullable Access one, @Nullable Access two) {
-        return Access.weakest(one == null ? Access.NONE : one, two == null ? Access.NONE : two);
-    }
-
     @Test
     public void testWriteRead() {
-        SegmentTree<Access> permissionRanges = new SegmentTree<>(24, Access.NONE, SegmentTreeTest::weakestAccess);
+        SegmentTree<Access> permissionRanges = new SegmentTree<>(24, Access.NONE, Access::weakest);
 
         permissionRanges.set(0, 6, Access.READ);
         permissionRanges.set(6, 12, Access.WRITE);

@@ -63,6 +63,10 @@ final class FieldUsageTransformer implements ClassFileTransformer {
                         // [..., fieldValue]
                         break;
                     case Opcode.PUTFIELD:
+                        // TODO inside construtor bodies before the super constructor call, should these putfield instructions be instrumented?
+                        // TODO probably not, because monitoring will always result in a violation --> test this hypothesis.
+                        // TODO consider alternative: have some way where we can have a wildcard permission for a class: write access for all instance fields of a newly created instance (after NEW instruction).
+
                         // putfield: [..., objectRef, newValue] -> [...]
 
                         // Operand stack

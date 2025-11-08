@@ -1,10 +1,7 @@
 package memorymonitoring.example;
 
 import memorymonitoring.runtime.Access;
-import memorymonitoring.runtime.ArrayReference;
-import memorymonitoring.runtime.FieldReference;
 import memorymonitoring.runtime.Permissions;
-import memorymonitoring.runtime.References;
 
 import java.util.Arrays;
 
@@ -19,16 +16,11 @@ public class Main {
     public static void main(String[] args) {
         IO.println("Hello, World!");
 
-        // TODO make it so this is also no longer needed.
-        ArrayReference longsAtIndex0 = References.getArrayReference(staticLongArray, 0);
-        ArrayReference longsAtIndex1 = References.getArrayReference(staticLongArray, 1);
-        Permissions.setPermission(longsAtIndex0, Access.WRITE);
-        Permissions.setPermission(longsAtIndex1, Access.READ);
-
         Main main = new Main();
 
-        ArrayReference objectsAtIndex0 = References.getArrayReference(main.objectArray, 0);
-        Permissions.setPermission(objectsAtIndex0, Access.WRITE);
+        // let's cause some violations on purpose (field):
+        Permissions.setFieldPermission(Main.class, "staticField", Access.READ);
+        Permissions.setFieldPermission(main, "instanceField", Access.NONE);
 
         main.instanceField += 1;
         main.instanceDouble = 1.0;
@@ -37,12 +29,26 @@ public class Main {
         IO.println("instanceDouble = " + main.instanceDouble);
         IO.println("staticField = " + Main.staticField);
 
+        // let's cause some violations on purpose (array):
+        Permissions.setArrayPermission(staticLongArray, 1, Access.READ);
+        Permissions.setArrayPermission(staticLongArray, 2, Access.NONE);
+
         staticLongArray[0] += 1L;
         staticLongArray[1] += 1L;
         staticLongArray[2] += 1L;
         IO.println("staticLongArray = " + Arrays.toString(staticLongArray));
         main.objectArray[0] = "Projector Inc.";
         IO.println("objectArray = " + Arrays.toString(main.objectArray));
+
+        int[][] matrix = {{1, 2}, {3, 4}};
+        matrix[1][1] = 5;
+        IO.println("matrix = " + Arrays.deepToString(matrix));
+
+        System.arraycopy(matrix[1], 0, matrix[0], 1, 1);
+        IO.println("matrix = " + Arrays.deepToString(matrix));
+
+        int[][] grid = new int[10][10];
+        IO.println("grid = " + Arrays.deepToString(grid));
     }
 
 }

@@ -8,6 +8,10 @@ import java.lang.classfile.CodeElement;
 import java.lang.classfile.TypeKind;
 import java.lang.classfile.instruction.ArrayLoadInstruction;
 import java.lang.classfile.instruction.ArrayStoreInstruction;
+import java.lang.classfile.instruction.InvokeInstruction;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDescs;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.security.ProtectionDomain;
@@ -71,6 +75,68 @@ final class ArrayUsageTransformer implements ClassFileTransformer {
                         // [...]
                     }
 
+                    else if (codeElement instanceof InvokeInstruction invokeInstruction && isInvokeSystemArrayCopy(invokeInstruction)) {
+                        // invokestatic: [..., arg1, ..., argN] -> [..., [resultValue]]
+
+                        // Operand stack:
+                        // [..., srcArr, srcPos, destArr, destPos, length]
+                        int length = codeBuilder.allocateLocal(TypeKind.INT);
+                        codeBuilder.istore(length);
+                        int destPos = codeBuilder.allocateLocal(TypeKind.INT);
+                        codeBuilder.istore(destPos);
+                        int destArr = codeBuilder.allocateLocal(TypeKind.REFERENCE);
+                        codeBuilder.astore(destArr);
+                        int srcPos = codeBuilder.allocateLocal(TypeKind.INT);
+                        codeBuilder.istore(srcPos);
+                        int srcArr = codeBuilder.allocateLocal(TypeKind.REFERENCE);
+                        codeBuilder.astore(srcArr);
+                        // [...]
+
+                        codeBuilder.aload(srcArr);
+                        // [..., srcArr]
+                        codeBuilder.iload(srcPos);
+                        // [..., srcArr, srcPos]
+                        codeBuilder.dup();
+                        // [..., srcArr, srcPos, srcPos]
+                        codeBuilder.iload(length);
+                        // [..., srcArr, srcPos, srcPos, length];
+                        codeBuilder.iadd();
+                        // [..., srcArr, srcPos, indexTo];
+                        readAccess(codeBuilder);
+                        // [..., srcArr, srcPos, indexTo, Access.READ];
+                        invokeLogArrayAccess_range(codeBuilder);
+                        // [...]
+
+                        codeBuilder.aload(destArr);
+                        // [..., destArr]
+                        codeBuilder.iload(destPos);
+                        // [..., destArr, destPos]
+                        codeBuilder.dup();
+                        // [..., destArr, destPos, destPos]
+                        codeBuilder.iload(length);
+                        // [..., destArr, destPos, destPos, length]
+                        codeBuilder.iadd();
+                        // [..., destArr, destPos, indexTo]
+                        writeAccess(codeBuilder);
+                        // [..., destArr, destPos, indexTo, Access.WRITE]
+                        invokeLogArrayAccess_range(codeBuilder);
+                        // [...]
+
+                        codeBuilder.aload(srcArr);
+                        codeBuilder.iload(srcPos);
+                        codeBuilder.aload(destArr);
+                        codeBuilder.iload(destPos);
+                        codeBuilder.iload(length);
+
+                        // [..., srcArr, srcPos, destArr, destPos, length]
+                        codeBuilder.with(codeElement);
+                        // [...]
+                    }
+
+                    // TODO intercept calls to java.lang.reflect.Array methods
+                    // TODO     check read permission for Array.get and Array.getXXX (where XXX is a primitive type)
+                    // TODO     check write permission for Array.set and Array.setXXX (where XXX is a primitive type)
+
                     else {
                         // proceed with normal code
                         codeBuilder.with(codeElement);
@@ -78,4 +144,19 @@ final class ArrayUsageTransformer implements ClassFileTransformer {
                 }
         ));
     }
+
+    private static boolean isInvokeSystemArrayCopy(InvokeInstruction invokeInstruction) {
+        return invokeInstruction.owner().matches(CD_SYSTEM)
+                && !invokeInstruction.isInterface()
+                && invokeInstruction.name().equalsString("arrayCopy")
+                && invokeInstruction.typeSymbol().equals(MTD_System_arrayCopy);
+    }
+
+    private static final ClassDesc CD_SYSTEM = ClassDesc.of("java.lang", "System");
+    private static final MethodTypeDesc MTD_System_arrayCopy = MethodTypeDesc.of(ConstantDescs.CD_void,
+            ConstantDescs.CD_Object,
+            ConstantDescs.CD_int,
+            ConstantDescs.CD_Object,
+            ConstantDescs.CD_int,
+            ConstantDescs.CD_int);
 }

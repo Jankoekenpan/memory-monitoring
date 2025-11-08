@@ -143,7 +143,7 @@ final class InitializerTransformer implements ClassFileTransformer {
             codeBuilder.ldc(staticFieldModel.fieldName().stringValue());
             // [..., Owner.class, "someField"]
             writeAccess(codeBuilder);
-            // [..., Owner.class, "someField, Access.WRITE]
+            // [..., Owner.class, "someField", Access.WRITE]
             invokeSetFieldPermission(codeBuilder);
             // [...]
         }

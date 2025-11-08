@@ -12,9 +12,10 @@ import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.security.ProtectionDomain;
 
-/**
- *
- */
+import static memorymonitoring.agent.RuntimeApiHelper.invokeSetArrayPermissionWholeArray;
+import static memorymonitoring.agent.RuntimeApiHelper.invokeSetArrayPermissionWholeMultiArray;
+import static memorymonitoring.agent.RuntimeApiHelper.writeAccess;
+
 public final class NewArrayTransformer implements ClassFileTransformer {
 
     @Override
@@ -37,19 +38,55 @@ public final class NewArrayTransformer implements ClassFileTransformer {
         return classFile.transformClass(classModel, ClassTransform.transformingMethodBodies((CodeBuilder codeBuilder, CodeElement codeElement) -> {
 
             if (codeElement instanceof NewPrimitiveArrayInstruction newPrimitiveArrayInstruction) {
+                // newarray: [..., count] -> [..., arr]
+
+                // Operand stack:
+                // [..., count]
                 codeBuilder.with(codeElement);
-                // TODO grant write access to the whole array
+                // [..., arr]
+                codeBuilder.dup();
+                // [..., arr, arr]
+                writeAccess(codeBuilder);
+                // [..., arr, arr, Access.WRITE]
+                invokeSetArrayPermissionWholeArray(codeBuilder);
+                // [..., arr]
             }
 
             else if (codeElement instanceof NewReferenceArrayInstruction newReferenceArrayInstruction) {
+                // anewarray: [..., count] -> [..., arr]
+
+                // Operand stack:
+                // [..., count]
                 codeBuilder.with(codeElement);
-                // TODO grant write access to the whole array
+                // [..., arr]
+                codeBuilder.dup();
+                // [..., arr, arr]
+                writeAccess(codeBuilder);
+                // [..., arr, arr, Access.WRITE]
+                invokeSetArrayPermissionWholeArray(codeBuilder);
+                // [..., arr]
             }
 
             else if (codeElement instanceof NewMultiArrayInstruction newMultiArrayInstruction) {
+                // multianewarray: [..., count1, ..., countN] -> [..., arr]
+
+                int dimensions = newMultiArrayInstruction.dimensions();
+
+                // Operand stack:
+                // [..., count1 ..., countN]
                 codeBuilder.with(codeElement);
-                // TODO grant write access to the whole array
+                // [..., arr]
+                codeBuilder.dup();
+                // [..., arr, arr]
+                codeBuilder.loadConstant(dimensions);
+                // [..., arr, arr, dimensions]
+                writeAccess(codeBuilder);
+                // [..., arr, arr, dimensions, Access.WRITE]
+                invokeSetArrayPermissionWholeMultiArray(codeBuilder);
+                // [..., arr]
             }
+
+            // TODO intercept calls to Array.newInstance
 
             else {
                 // Leave all other instructions unchanged.
@@ -57,5 +94,4 @@ public final class NewArrayTransformer implements ClassFileTransformer {
             }
         }));
     }
-
 }

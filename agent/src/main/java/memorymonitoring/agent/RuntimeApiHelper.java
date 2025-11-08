@@ -11,9 +11,11 @@ final class RuntimeApiHelper {
     static final ClassDesc ACCESS_CLASSDESC = ClassDesc.of(RUNTIME_PACKAGE, "Access");
     static final ClassDesc PERMISSIONS_CLASSDESC = ClassDesc.of(RUNTIME_PACKAGE, "Permissions");
     static final MethodTypeDesc SET_FIELD_PERMISSION_METHOD_TYPE_DESC = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_Object, ConstantDescs.CD_String, ACCESS_CLASSDESC);
-    static final MethodTypeDesc SET_ARRAY_PERMISSION_METHOD_TYPE_DESC = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_Object, ConstantDescs.CD_int, ACCESS_CLASSDESC);
+    static final MethodTypeDesc SET_ARRAY_PERMISSION_WHOLE_ARRAY_METHOD_TYPE_DESC = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_Object, ACCESS_CLASSDESC);
+    static final MethodTypeDesc SET_ARRAY_PERMISSION_WHOLE_MULTI_ARRAY_METHOD_TYPE_DESC = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_Object, ConstantDescs.CD_int, ACCESS_CLASSDESC);
     static final MethodTypeDesc LOG_FIELD_ACCESS_METHOD_TYPE_DESC = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_Object, ConstantDescs.CD_String, ACCESS_CLASSDESC);
     static final MethodTypeDesc LOG_ARRAY_ACCESS_METHOD_TYPE_DESC = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_Object, ConstantDescs.CD_int, ACCESS_CLASSDESC);
+    static final MethodTypeDesc LOG_ARRAY_ACCESS_RANGE_METHOD_TYPE_DESC = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_Object, ConstantDescs.CD_int, ConstantDescs.CD_int, ACCESS_CLASSDESC);
 
     private RuntimeApiHelper() {
     }
@@ -38,11 +40,19 @@ final class RuntimeApiHelper {
         codeBuilder.invokestatic(PERMISSIONS_CLASSDESC, "logArrayAccess", LOG_ARRAY_ACCESS_METHOD_TYPE_DESC, false);
     }
 
+    static void invokeLogArrayAccess_range(CodeBuilder codeBuilder) {
+        codeBuilder.invokestatic(PERMISSIONS_CLASSDESC, "logArrayAccess", LOG_ARRAY_ACCESS_RANGE_METHOD_TYPE_DESC, false);
+    }
+
     static void invokeSetFieldPermission(CodeBuilder codeBuilder) {
         codeBuilder.invokestatic(PERMISSIONS_CLASSDESC, "setFieldPermission", SET_FIELD_PERMISSION_METHOD_TYPE_DESC, false);
     }
 
-    static void invokeSetArrayPermission(CodeBuilder codeBuilder) {
-        codeBuilder.invokestatic(PERMISSIONS_CLASSDESC, "setArrayPermission", SET_ARRAY_PERMISSION_METHOD_TYPE_DESC, false);
+    static void invokeSetArrayPermissionWholeArray(CodeBuilder codeBuilder) {
+        codeBuilder.invokestatic(PERMISSIONS_CLASSDESC, "setArrayPermissionWholeArray", SET_ARRAY_PERMISSION_WHOLE_ARRAY_METHOD_TYPE_DESC, false);
+    }
+
+    static void invokeSetArrayPermissionWholeMultiArray(CodeBuilder codeBuilder) {
+        codeBuilder.invokestatic(PERMISSIONS_CLASSDESC, "setArrayPermissionWholeMultiArray", SET_ARRAY_PERMISSION_WHOLE_MULTI_ARRAY_METHOD_TYPE_DESC, false);
     }
 }

@@ -9,4 +9,8 @@ public enum Access {
     public boolean covers(Access other) {
         return other.ordinal() <= this.ordinal();
     }
+
+    public static Access weakest(Access one, Access two) {
+        return one.covers(two) ? two : one;
+    }
 }

@@ -21,14 +21,16 @@ public class Main {
 
         // TODO make it so this is also no longer needed.
         ArrayReference longsAtIndex0 = References.getArrayReference(staticLongArray, 0);
-        ArrayReference longsAtIndex1 = References.getArrayReference(staticLongArray, 1);
         Permissions.setPermission(longsAtIndex0, Access.WRITE);
-        Permissions.setPermission(longsAtIndex1, Access.READ);
 
         Main main = new Main();
 
         ArrayReference objectsAtIndex0 = References.getArrayReference(main.objectArray, 0);
         Permissions.setPermission(objectsAtIndex0, Access.WRITE);
+
+        // let's cause some violations on purpose (field):
+        Permissions.setPermission(References.getFieldReference(Main.class, "staticField"), Access.READ);
+        Permissions.setPermission(References.getFieldReference(main, "instanceField"), Access.NONE);
 
         main.instanceField += 1;
         main.instanceDouble = 1.0;
@@ -36,6 +38,12 @@ public class Main {
         IO.println("instanceField = " + main.instanceField);
         IO.println("instanceDouble = " + main.instanceDouble);
         IO.println("staticField = " + Main.staticField);
+
+        // let's cause some violations on purpose (array):
+        ArrayReference longsAtIndex1 = References.getArrayReference(staticLongArray, 1);
+        ArrayReference longsAtIndex2 = References.getArrayReference(staticLongArray, 2);
+        Permissions.setPermission(longsAtIndex1, Access.READ);
+        Permissions.setPermission(longsAtIndex2, Access.NONE);
 
         staticLongArray[0] += 1L;
         staticLongArray[1] += 1L;

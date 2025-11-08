@@ -12,9 +12,6 @@ import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.security.ProtectionDomain;
 
-/**
- *
- */
 public final class NewArrayTransformer implements ClassFileTransformer {
 
     @Override
@@ -57,5 +54,7 @@ public final class NewArrayTransformer implements ClassFileTransformer {
             }
         }));
     }
+
+    // TODO can we also support System.arrayCopy? probably yes, once we have array range support.
 
 }

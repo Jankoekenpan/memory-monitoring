@@ -42,16 +42,14 @@ public final class Permissions {
     // TODO overload setArrayPermission with (Thread Object, int, Access) -> void
     public static void setPermission(Thread thread, Reference reference, Access accessLevel) {
         // TODO should log or throw an exception when other threads already holds conflicting access.
+        // TODO should probably also log / throw when thread tries to upgrade its access level?
+
+        // TODO setting to Access.NONE should remove the entry from the permissions map.
 
         String message = String.format("Thread %s: Setting %s to access level %s.", thread.getName(), reference, accessLevel);
         LOGGER.info(message);
 
         permissions.computeIfAbsent(reference, _ -> new WeakHashMap<>()).put(thread, accessLevel);
-    }
-
-    // Called by bytecode-transformed code
-    public static Access getPermission(FieldReference fieldReference) {
-        return getPermission(Thread.currentThread(), fieldReference);
     }
 
     private static Access getPermission(Thread thread, Reference reference) {

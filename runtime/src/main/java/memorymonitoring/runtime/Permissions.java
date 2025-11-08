@@ -31,7 +31,7 @@ public final class Permissions {
     }
 
     public static synchronized void setFieldPermission(Thread thread, Object owningInstance, String fieldName, Access access) {
-        String message = String.format("Giving %s permission to thread %s at object field %s.%s", access, thread.getName(), owningInstance, fieldName);
+        String message = String.format("Granting %s permission to thread %s at object field %s.%s", access, thread.getName(), owningInstance, fieldName);
         LOGGER.info(message);
 
         // TODO check whether other threads have conflicting permission to the object field?
@@ -78,7 +78,7 @@ public final class Permissions {
      * @param access the permission level to be set
      */
     public static synchronized void setArrayPermission(Thread thread, Object arrayInstance, int indexFrom, int indexTo, Access access) {
-        String message = String.format("Giving %s permission to thread %s at array range %s[%d, %d)", access, thread.getName(), arrayInstanceToString(arrayInstance), indexFrom, indexTo);
+        String message = String.format("Granting %s permission to thread %s at array range %s[%d, %d)", access, thread.getName(), arrayInstanceToString(arrayInstance), indexFrom, indexTo);
         LOGGER.info(message);
 
         // TODO check whether other threads have conflicting permission in this array range?

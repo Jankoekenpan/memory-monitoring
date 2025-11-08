@@ -17,10 +17,6 @@ public final class Permissions {
 
     private static final Logger LOGGER = Logger.getLogger(Permissions.class.getName());
 
-    // TODO remove:
-//    // Reference objects will be gc'ed once their owningInstance is no longer reachable,
-//    // because FieldReference and ArrayReference objects can only be created through the References factory.
-//    private static final Map<Reference, Map<Thread, Access>> permissions = Collections.synchronizedMap(new WeakHashMap<>());
     private static final WeakHashMap<Object, WeakHashMap<Thread, Map<String, Access>>> fieldPermissions = new WeakHashMap<>();
     private static final WeakHashMap<Object, WeakHashMap<Thread, SegmentTree<Access>>> arrayPermissions = new WeakHashMap<>();
 
@@ -93,7 +89,8 @@ public final class Permissions {
     public static void logFieldAccess(Object owningInstance, String fieldName, Access observedAccessLevel) {
         Thread thread = Thread.currentThread();
         Access grantedAccess = getFieldPermission(thread, owningInstance, fieldName);
-        logAccess(thread, "%s.%s".formatted(owningInstance, fieldName), observedAccessLevel, grantedAccess);
+        Object formattedOwningInstance = owningInstance instanceof Class<?> clazz ? clazz.getName() : owningInstance;
+        logAccess(thread, "%s.%s".formatted(formattedOwningInstance, fieldName), observedAccessLevel, grantedAccess);
     }
 
     @CalledByInstrumentedCode

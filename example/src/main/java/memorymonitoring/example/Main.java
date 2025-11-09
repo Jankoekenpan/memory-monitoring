@@ -53,6 +53,13 @@ public class Main {
 
         Array.setInt(grid[0], 0, 1);
         IO.println("grid = " + Arrays.deepToString(grid));
+
+        int x = Array.getInt(grid[0], 0);
+
+        String[] stringArray = (String[]) Array.newInstance(String.class, 1);
+        stringArray[0] = "Hello, ";
+        String[][] stringArrayArray = (String[][]) Array.newInstance(String.class, 2, 2);
+        stringArrayArray[1][1] = "World!";
     }
 
 }

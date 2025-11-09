@@ -87,6 +87,7 @@ public final class NewArrayTransformer implements ClassFileTransformer {
             }
 
             // TODO intercept calls to Array.newInstance
+            // TODO determine which overload by checking the method parameter description. (cannot have VarArgs for arrays in Java.)
 
             else {
                 // Leave all other instructions unchanged.

@@ -242,7 +242,7 @@ final class ArrayUsageTransformer implements ClassFileTransformer {
             MTD_ARRAY_SET_SHORT = setMethodDescriptor(CD_short);
 
     private static MethodTypeDesc setMethodDescriptor(ClassDesc valueType) {
-        return MethodTypeDesc.of(CD_Object, CD_int, valueType);
+        return MethodTypeDesc.of(CD_void, CD_Object, CD_int, valueType);
     }
 
     private static void genGetWriteAccess(CodeBuilder codeBuilder, TypeKind typeKind) {

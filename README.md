@@ -33,3 +33,4 @@ java -javaagent:.\agent\target\agent-1.0-SNAPSHOT.jar -cp .\runtime\target\runti
 - Un-hardcode classes to be instrumented.
 - Fractional permissions? split & merge support?
 - Find a good way for dealing with instance field assignments before super constructor calls (flexible constructor bodies).
+- For final fields: grant read access to other threads by default after <clinit> or <init> has finished executing.

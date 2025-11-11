@@ -13,6 +13,7 @@ import java.lang.classfile.MethodModel;
 import java.lang.classfile.Opcode;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.instruction.InvokeInstruction;
+import java.lang.classfile.instruction.ReturnInstruction;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
@@ -21,8 +22,11 @@ import java.lang.instrument.IllegalClassFormatException;
 import java.lang.reflect.AccessFlag;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+
 import static memorymonitoring.agent.RuntimeApiHelper.*;
 
 final class InitializerTransformer implements ClassFileTransformer {
@@ -47,8 +51,12 @@ final class InitializerTransformer implements ClassFileTransformer {
         List<FieldModel> fields = classModel.fields();
         ArrayList<FieldModel> instanceFields = new ArrayList<>(fields.size());
         ArrayList<FieldModel> staticFields = new ArrayList<>(fields.size());
+        Set<String> finalFields = new HashSet<>();
         for (FieldModel field : fields) {
             (field.flags().has(AccessFlag.STATIC) ? staticFields : instanceFields).add(field);
+            if (field.flags().has(AccessFlag.FINAL)) {
+                finalFields.add(field.fieldName().stringValue());
+            }
         }
         instanceFields.trimToSize();
         staticFields.trimToSize();
@@ -64,7 +72,14 @@ final class InitializerTransformer implements ClassFileTransformer {
                         ConstantDescs.CLASS_INIT_NAME,
                         ConstantDescs.MTD_void,
                         AccessFlag.PUBLIC.mask() | AccessFlag.STATIC.mask(),
-                        (CodeBuilder codeBuilder) -> instrumentStaticInitializer(codeBuilder, thisClass, staticFields)
+                        (CodeBuilder codeBuilder) -> {
+                            // Set WRITE permission for the calling thread for all static fields.
+                            generateSetWritePermissionForAllStaticFieldsInThisClass(codeBuilder, thisClass, staticFields);
+                            // Set default READ permission for all threads for all static final fields.
+                            generateSetReadPermissionFallbackForAllStaticFieldsInThisClass(codeBuilder, thisClass, finalFields, staticFields);
+                            // return (void)
+                            codeBuilder.return_();
+                        }
                 );
             } // otherwise, static initialiser will be instrumented.
 
@@ -92,12 +107,34 @@ final class InitializerTransformer implements ClassFileTransformer {
                                 invokeSetFieldPermission(codeBuilder);
                                 // [...]
                             }
-                        } else {
+                        }
+
+                        else if (codeElement instanceof ReturnInstruction) {
+                            // Before return, grant READ permission to all threads for all final instance fields.
+
+                            for (FieldModel instanceFieldModel : instanceFields) {
+                                // loop body contents similar to #accept method.
+                                String fieldName = instanceFieldModel.fieldName().stringValue();
+                                if (finalFields.contains(fieldName)) {
+                                    // we do get here
+                                    codeBuilder.aload(0);       // [..., this]
+                                    codeBuilder.ldc(fieldName); // [..., this, "someField"]
+                                    readAccess(codeBuilder);    // [..., this, "someField", Access.READ]
+                                    invokeSetFieldDefaultPermission(codeBuilder);
+                                }
+                            }
+
+                            // regardless of the type of return instruction, our operand stack should be exactly the same
+                            // as before decorating the return instructions. Whether it's a void return, int return or long return
+                            // we can just do the return and assume the stack has the correct return value on top.
+                            codeBuilder.with(codeElement);
+                        }
+
+                        else {
                             codeBuilder.with(codeElement);
                         }
                     }
                 }));
-
             }
 
             else if (hasClassInitializer && classElement instanceof MethodModel maybeClassInitializerMethod && isClassInitializer(maybeClassInitializerMethod)) {
@@ -108,11 +145,19 @@ final class InitializerTransformer implements ClassFileTransformer {
                         CodeModel codeModel = code.get();
                         // Set Access.WRITE permission for all static fields.
                         // Note, the generated code does not contain an extra loop; the field permissions are just written inlined/unrolled.
-
-                        instrumentStaticInitializer(codeBuilder, thisClass, staticFields);
+                        generateSetWritePermissionForAllStaticFieldsInThisClass(codeBuilder, thisClass, staticFields);
 
                         // Write the original class initializer instructions afterwards.
-                        codeModel.forEach(codeBuilder::with);
+                        for (CodeElement codeElement : codeModel) {
+                            if (codeElement instanceof ReturnInstruction) {
+                                // Before return, set Access.READ permission for all final static fields, for all threads.
+                                generateSetReadPermissionFallbackForAllStaticFieldsInThisClass(codeBuilder, thisClass, finalFields, staticFields);
+                                codeBuilder.with(codeElement);
+                            }
+                            else {
+                                codeBuilder.with(codeElement);
+                            }
+                        }
                     }
                 });
             }
@@ -122,6 +167,22 @@ final class InitializerTransformer implements ClassFileTransformer {
                 classBuilder.accept(classElement);
             }
         });
+    }
+
+    private void generateSetReadPermissionFallbackForAllStaticFieldsInThisClass(CodeBuilder codeBuilder,
+                                                                                ClassDesc thisClass,
+                                                                                Set<String> finalFields,
+                                                                                List<FieldModel> staticFields) {
+        for (FieldModel staticField : staticFields) {
+            if (finalFields.contains(staticField.fieldName().stringValue())) {
+                // prepare [..., owningInstance, fieldName, access]:
+                codeBuilder.ldc(thisClass);                             // owningInstance = Foo.class
+                codeBuilder.ldc(staticField.fieldName().stringValue()); // fieldName = "someField"
+                readAccess(codeBuilder);                                // access = Access.READ
+                // consume arguments, set default permission for the static final field.
+                invokeSetFieldDefaultPermission(codeBuilder);
+            }
+        }
     }
 
     private static boolean isInvokeSuperConstructor(Optional<ClassEntry> superClass, InvokeInstruction invokeInstruction) {
@@ -134,7 +195,9 @@ final class InitializerTransformer implements ClassFileTransformer {
                 && invokeInstruction.typeSymbol().returnType().equals(ConstantDescs.CD_void);
     }
 
-    private static void instrumentStaticInitializer(CodeBuilder codeBuilder, ClassDesc thisClass, List<FieldModel> staticFields) {
+    private static void generateSetWritePermissionForAllStaticFieldsInThisClass(CodeBuilder codeBuilder, ClassDesc thisClass, List<FieldModel> staticFields) {
+        // Grants WRITE permission to the current thread for all fields in staticFields
+
         // [...]
         for (FieldModel staticFieldModel : staticFields) {
             // [...]

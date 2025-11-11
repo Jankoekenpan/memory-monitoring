@@ -8,11 +8,13 @@ import java.util.Arrays;
 
 public class Main {
 
+    private static final long CONSTANT_LONG = Long.MAX_VALUE;
     private long instanceField;
     private static int staticField;
     private double instanceDouble = Double.NaN;
     private static long[] staticLongArray = {0L, 1L, 2L};
     private Object[] objectArray = new Object[1];
+    private final String string = "string";
 
     public static void main(String[] args) {
         IO.println("Hello, World!");

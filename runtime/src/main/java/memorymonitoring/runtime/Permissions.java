@@ -23,6 +23,7 @@ public final class Permissions {
     // TODO I think our access patterns (and access patterns of generated code) is like this, so we could do this refactor (and remove a bunch of synchronized modifiers from methods in this class).
     private static final WeakIdentityHashMap<Object, WeakHashMap<Thread, Map<String, Access>>> fieldPermissions = new WeakIdentityHashMap<>();  // For static fields, the owning Object is an instance of java.lang.Class.
     private static final WeakIdentityHashMap<Object, WeakHashMap<Thread, SegmentTree<Access>>> arrayPermissions = new WeakIdentityHashMap<>();
+    private static final WeakIdentityHashMap<Object, Map<String, Access>> fieldDefaultPermissions = new WeakIdentityHashMap<>();
 
     private Permissions() {}
 
@@ -41,6 +42,16 @@ public final class Permissions {
                 .computeIfAbsent(Objects.requireNonNull(owningInstance), _ -> new WeakHashMap<>())
                 .computeIfAbsent(thread, _ -> new HashMap<>())
                 .put(fieldName, access); // TODO when upgrading permission, log warning?
+    }
+
+    @CalledByInstrumentedCode
+    public static synchronized void setFieldDefaultPermission(Object owningInstance, String fieldName, Access access) {
+        String message = String.format("Granting %s permission to all threads at object field %s.%s", access, owningInstance, fieldName);
+        LOGGER.info(message);
+
+        fieldDefaultPermissions
+                .computeIfAbsent(owningInstance, _ -> new HashMap<>())
+                .put(fieldName, access);
     }
 
     // not called by instrumented code (yet).
@@ -94,6 +105,8 @@ public final class Permissions {
         return Optional.ofNullable(fieldPermissions.get(owningInstance))
                 .map(threadFieldAccesses -> threadFieldAccesses.get(thread))
                 .map(fieldAccesses -> fieldAccesses.get(fieldName))
+                .or(() -> Optional.ofNullable(fieldDefaultPermissions.get(owningInstance))
+                        .map(fieldMapping -> fieldMapping.get(fieldName)))
                 .orElse(Access.NONE);
     }
 

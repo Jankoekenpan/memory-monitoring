@@ -11,6 +11,7 @@ final class RuntimeApiHelper {
     static final ClassDesc ACCESS_CLASSDESC = ClassDesc.of(RUNTIME_PACKAGE, "Access");
     static final ClassDesc PERMISSIONS_CLASSDESC = ClassDesc.of(RUNTIME_PACKAGE, "Permissions");
     static final MethodTypeDesc SET_FIELD_PERMISSION_METHOD_TYPE_DESC = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_Object, ConstantDescs.CD_String, ACCESS_CLASSDESC);
+    static final MethodTypeDesc SET_FIELD_DEFAULT_PERMISSION_METHOD_TYPE_DESC = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_Object, ConstantDescs.CD_String, ACCESS_CLASSDESC);
     static final MethodTypeDesc SET_ARRAY_PERMISSION_WHOLE_ARRAY_METHOD_TYPE_DESC = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_Object, ACCESS_CLASSDESC);
     static final MethodTypeDesc SET_ARRAY_PERMISSION_WHOLE_MULTI_ARRAY_METHOD_TYPE_DESC = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_Object, ConstantDescs.CD_int, ACCESS_CLASSDESC);
     static final MethodTypeDesc LOG_FIELD_ACCESS_METHOD_TYPE_DESC = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_Object, ConstantDescs.CD_String, ACCESS_CLASSDESC);
@@ -54,5 +55,9 @@ final class RuntimeApiHelper {
 
     static void invokeSetArrayPermissionWholeMultiArray(CodeBuilder codeBuilder) {
         codeBuilder.invokestatic(PERMISSIONS_CLASSDESC, "setArrayPermissionWholeMultiArray", SET_ARRAY_PERMISSION_WHOLE_MULTI_ARRAY_METHOD_TYPE_DESC, false);
+    }
+
+    static void invokeSetFieldDefaultPermission(CodeBuilder codeBuilder) {
+        codeBuilder.invokestatic(PERMISSIONS_CLASSDESC, "setFieldDefaultPermission", SET_FIELD_DEFAULT_PERMISSION_METHOD_TYPE_DESC, false);
     }
 }

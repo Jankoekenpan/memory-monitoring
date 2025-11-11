@@ -207,17 +207,17 @@ final class ArrayUsageTransformer implements ClassFileTransformer {
     }
 
     private static final MethodTypeDesc
-            MTD_ARRAY_GET = getMethodDescriptor(CD_Object),
-            MTD_ARRAY_GET_BOOLEAN = getMethodDescriptor(CD_boolean),
-            MTD_ARRAY_GET_BYTE = getMethodDescriptor(CD_byte),
-            MTD_ARRAY_GET_CHAR = getMethodDescriptor(CD_char),
-            MTD_ARAY_GET_DOUBLE = getMethodDescriptor(CD_double),
-            MTD_ARRAY_GET_FLOAT = getMethodDescriptor(CD_float),
-            MTD_ARRAY_GET_INT = getMethodDescriptor(CD_int),
-            MTD_ARRAY_GET_LONG = getMethodDescriptor(CD_long),
-            MTD_ARRAY_GET_SHORT = getMethodDescriptor(CD_short);
+            MTD_ARRAY_GET = arrayGetMethodDescriptor(CD_Object),
+            MTD_ARRAY_GET_BOOLEAN = arrayGetMethodDescriptor(CD_boolean),
+            MTD_ARRAY_GET_BYTE = arrayGetMethodDescriptor(CD_byte),
+            MTD_ARRAY_GET_CHAR = arrayGetMethodDescriptor(CD_char),
+            MTD_ARAY_GET_DOUBLE = arrayGetMethodDescriptor(CD_double),
+            MTD_ARRAY_GET_FLOAT = arrayGetMethodDescriptor(CD_float),
+            MTD_ARRAY_GET_INT = arrayGetMethodDescriptor(CD_int),
+            MTD_ARRAY_GET_LONG = arrayGetMethodDescriptor(CD_long),
+            MTD_ARRAY_GET_SHORT = arrayGetMethodDescriptor(CD_short);
 
-    private static MethodTypeDesc getMethodDescriptor(ClassDesc returnType) {
+    private static MethodTypeDesc arrayGetMethodDescriptor(ClassDesc returnType) {
         return MethodTypeDesc.of(returnType, CD_Object, CD_int);
     }
 
@@ -232,17 +232,17 @@ final class ArrayUsageTransformer implements ClassFileTransformer {
     }
 
     private static final MethodTypeDesc
-            MTD_ARRAY_SET = setMethodDescriptor(CD_Object),
-            MTD_ARRAY_SET_BOOLEAN = setMethodDescriptor(CD_boolean),
-            MTD_ARRAY_SET_BYTE = setMethodDescriptor(CD_byte),
-            MTD_ARRAY_SET_CHAR = setMethodDescriptor(CD_char),
-            MTD_ARRAY_SET_DOUBLE = setMethodDescriptor(CD_double),
-            MTD_ARRAY_SET_FLOAT = setMethodDescriptor(CD_float),
-            MTD_ARRAY_SET_INT = setMethodDescriptor(CD_int),
-            MTD_ARRAY_SET_LONG = setMethodDescriptor(CD_long),
-            MTD_ARRAY_SET_SHORT = setMethodDescriptor(CD_short);
+            MTD_ARRAY_SET = arraySetMethodDescriptor(CD_Object),
+            MTD_ARRAY_SET_BOOLEAN = arraySetMethodDescriptor(CD_boolean),
+            MTD_ARRAY_SET_BYTE = arraySetMethodDescriptor(CD_byte),
+            MTD_ARRAY_SET_CHAR = arraySetMethodDescriptor(CD_char),
+            MTD_ARRAY_SET_DOUBLE = arraySetMethodDescriptor(CD_double),
+            MTD_ARRAY_SET_FLOAT = arraySetMethodDescriptor(CD_float),
+            MTD_ARRAY_SET_INT = arraySetMethodDescriptor(CD_int),
+            MTD_ARRAY_SET_LONG = arraySetMethodDescriptor(CD_long),
+            MTD_ARRAY_SET_SHORT = arraySetMethodDescriptor(CD_short);
 
-    private static MethodTypeDesc setMethodDescriptor(ClassDesc valueType) {
+    private static MethodTypeDesc arraySetMethodDescriptor(ClassDesc valueType) {
         return MethodTypeDesc.of(CD_void, CD_Object, CD_int, valueType);
     }
 

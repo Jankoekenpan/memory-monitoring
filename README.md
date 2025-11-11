@@ -34,3 +34,8 @@ java -javaagent:.\agent\target\agent-1.0-SNAPSHOT.jar -cp .\runtime\target\runti
 - Fractional permissions? split & merge support?
 - Find a good way for dealing with instance field assignments before super constructor calls (flexible constructor bodies).
 - For final fields: grant read access to other threads by default after <clinit> or <init> has finished executing.
+
+## Limitations
+- java.lang.reflect.Field api (but maybe the Field api could be supported for fields obtained via Class#getDeclaredfield(String))
+- java.lang.invoke.VarHandle api (but maybe MethodHandles.Lookup#findVarHandle and #findStaticVarhandle)
+- java.lang.invoke.MethodHandles.Lookup api (but maybe #find(Static)Getter and #find(Static)Setter could be supported)

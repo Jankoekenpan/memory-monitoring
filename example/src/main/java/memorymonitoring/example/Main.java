@@ -57,9 +57,12 @@ public class Main {
         int x = Array.getInt(grid[0], 0);
 
         String[] stringArray = (String[]) Array.newInstance(String.class, 1);
-        stringArray[0] = "Hello, ";
+        stringArray[0] = "Hello";           // ["Hello"]
         String[][] stringArrayArray = (String[][]) Array.newInstance(String.class, 2, 2);
-        stringArrayArray[1][1] = "World!";
+        stringArrayArray[1][1] = "World!";  // [[null, null], [null, "World!"]]
+
+        System.arraycopy(stringArray, 0, stringArrayArray[0], 0, stringArray.length);   // [["Hello", null], [null, "World"]]
+        IO.println(Arrays.deepToString(stringArrayArray));
     }
 
 }

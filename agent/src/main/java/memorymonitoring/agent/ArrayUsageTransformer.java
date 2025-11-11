@@ -152,13 +152,14 @@ final class ArrayUsageTransformer implements ClassFileTransformer {
 
     private static boolean isInvokeSystemArrayCopy(InvokeInstruction invokeInstruction) {
         return invokeInstruction.owner().matches(CD_SYSTEM)
+                && invokeInstruction.opcode() == Opcode.INVOKESTATIC
                 && !invokeInstruction.isInterface()
-                && invokeInstruction.name().equalsString("arrayCopy")
-                && invokeInstruction.typeSymbol().equals(MTD_System_arrayCopy);
+                && invokeInstruction.name().equalsString("arraycopy")
+                && invokeInstruction.typeSymbol().equals(MTD_System_arraycopy);
     }
 
     private static final ClassDesc CD_SYSTEM = ClassDesc.of("java.lang", "System");
-    private static final MethodTypeDesc MTD_System_arrayCopy = MethodTypeDesc.of(CD_void,
+    private static final MethodTypeDesc MTD_System_arraycopy = MethodTypeDesc.of(CD_void,
             CD_Object, CD_int, CD_Object, CD_int, CD_int);
 
     private static final ClassDesc CD_ARRAY = ClassDesc.of("java.lang.reflect", "Array");

@@ -137,6 +137,8 @@ final class FieldUsageTransformer implements ClassFileTransformer {
                 }
             }
 
+            // TODO support java.lang.reflect.Field apis.
+
             else {
                 // proceed with normal code
                 codeBuilder.with(codeElement);

@@ -33,8 +33,13 @@ java -javaagent:.\agent\target\agent-1.0-SNAPSHOT.jar -cp .\runtime\target\runti
 - Un-hardcode classes to be instrumented.
 - Fractional permissions? split & merge support?
 - Find a good way for dealing with instance field assignments before super constructor calls (flexible constructor bodies).
+- Optimize away unnecessary permission checks where possible.
+- Support java.lang.reflect.Field api
+- Implement permission transfers automatically for fields annotated with @GuardedBy. Support sommon cases: Synchronized, ReentrantLock.
+  - (javax.annotation.concurrent.GuardedBy from jsr305 has retention CLASS, so it should be analyzable by bytecode readers)
+- Case studies: buffered source/sink, casino, memcached challenge(verifythis), hagrid challenge(verifythis).
+- Measurements: instrumented code performance vs non-instrumented code performance, measure against other approaches from other papers.
 
 ## Limitations
-- java.lang.reflect.Field api (but maybe the Field api could be supported for fields obtained via Class#getDeclaredfield(String))
-- java.lang.invoke.VarHandle api (but maybe MethodHandles.Lookup#findVarHandle and #findStaticVarhandle)
+- java.lang.invoke.VarHandle api (but maybe MethodHandles.Lookup#findVarHandle and #findStaticVarhandle can be supported with some dataflow analysis?)
 - java.lang.invoke.MethodHandles.Lookup api (but maybe #find(Static)Getter and #find(Static)Setter could be supported)

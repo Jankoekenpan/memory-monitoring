@@ -21,6 +21,8 @@ public final class Permissions {
     // TODO could make use of Collections.synchronizedMap, if we can be sure that this won't cause deadlocks.
     // TODO i.e. while being locked on one of the instances, the other instance should never be accessed.
     // TODO I think our access patterns (and access patterns of generated code) is like this, so we could do this refactor (and remove a bunch of synchronized modifiers from methods in this class).
+    // TODO can we make this lock-free? or at the very least only lock on the owning object references?
+    // TODO probably want to refactor this again to WeakIdentityHashMap<Object, Map<String, WeakHashMap<Thread, Access>>> to enable quicker access checking for other threads.
     private static final WeakIdentityHashMap<Object, WeakHashMap<Thread, Map<String, Access>>> fieldPermissions = new WeakIdentityHashMap<>();  // For static fields, the owning Object is an instance of java.lang.Class.
     private static final WeakIdentityHashMap<Object, WeakHashMap<Thread, SegmentTree<Access>>> arrayPermissions = new WeakIdentityHashMap<>();
     private static final WeakIdentityHashMap<Object, Map<String, Access>> fieldDefaultPermissions = new WeakIdentityHashMap<>();

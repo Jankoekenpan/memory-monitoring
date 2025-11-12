@@ -26,6 +26,9 @@ public final class Permissions {
     private static final WeakIdentityHashMap<Object, WeakHashMap<Thread, Map<String, Access>>> fieldPermissions = new WeakIdentityHashMap<>();  // For static fields, the owning Object is an instance of java.lang.Class.
     private static final WeakIdentityHashMap<Object, WeakHashMap<Thread, SegmentTree<Access>>> arrayPermissions = new WeakIdentityHashMap<>();
     private static final WeakIdentityHashMap<Object, Map<String, Access>> fieldDefaultPermissions = new WeakIdentityHashMap<>();
+    // TODO does the current setup support fields declared in the superclass with the same name as fields in the subclass?
+    // TODO I don't think so, so perhaps we should identify fields not just by their name, but also by their declaring class.
+    // TODO one could consider a record FieldIdentifier(Class<?> declaringClass, String fieldName).
 
     private Permissions() {}
 

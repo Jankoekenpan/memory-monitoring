@@ -122,8 +122,7 @@ public final class Permissions {
                 .map(rangeAccesses -> rangeAccesses.get(indexFrom, indexTo))
                 .orElse(Access.NONE);
     }
-
-    // TODO implement instrumentation
+    
     @CalledByInstrumentedCode
     public static void logFieldAccess(Field field, Object objectInstance, Access observedAccessLevel) {
         Object owningInstance = objectInstance == null ? field.getDeclaringClass() : objectInstance;

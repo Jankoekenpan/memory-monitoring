@@ -5,6 +5,7 @@ import memorymonitoring.util.SegmentTree;
 import memorymonitoring.util.WeakIdentityHashMap;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,18 +24,18 @@ public final class Permissions {
     // TODO I think our access patterns (and access patterns of generated code) is like this, so we could do this refactor (and remove a bunch of synchronized modifiers from methods in this class).
     // TODO can we make this lock-free? or at the very least only lock on the owning object references?
     // TODO probably want to refactor this again to WeakIdentityHashMap<Object, Map<String, WeakHashMap<Thread, Access>>> to enable quicker access checking for other threads.
-    private static final WeakIdentityHashMap<Object, WeakHashMap<Thread, Map<String, Access>>> fieldPermissions = new WeakIdentityHashMap<>();  // For static fields, the owning Object is an instance of java.lang.Class.
+    private static final WeakIdentityHashMap<Object, WeakHashMap<Thread, Map<FieldIdentifier, Access>>> fieldPermissions = new WeakIdentityHashMap<>();  // For static fields, the owning Object is an instance of java.lang.Class.
     private static final WeakIdentityHashMap<Object, WeakHashMap<Thread, SegmentTree<Access>>> arrayPermissions = new WeakIdentityHashMap<>();
-    private static final WeakIdentityHashMap<Object, Map<String, Access>> fieldDefaultPermissions = new WeakIdentityHashMap<>();
+    private static final WeakIdentityHashMap<Object, Map<FieldIdentifier, Access>> fieldDefaultPermissions = new WeakIdentityHashMap<>();
 
     private Permissions() {}
 
     @CalledByInstrumentedCode
-    public static void setFieldPermission(Object owningInstance, String fieldName, Access access) {
-        setFieldPermission(Thread.currentThread(), owningInstance, fieldName, access);
+    public static void setFieldPermission(Object owningInstance, Class<?> declaringClass, String fieldName, Access access) {
+        setFieldPermission(Thread.currentThread(), owningInstance, declaringClass, fieldName, access);
     }
 
-    public static synchronized void setFieldPermission(Thread thread, Object owningInstance, String fieldName, Access access) {
+    public static synchronized void setFieldPermission(Thread thread, Object owningInstance, Class<?> declaringClass, String fieldName, Access access) {
         String message = String.format("Granting %s permission to thread %s at object field %s.%s", access, thread.getName(), owningInstance, fieldName);
         LOGGER.info(message);
 
@@ -43,17 +44,17 @@ public final class Permissions {
         fieldPermissions
                 .computeIfAbsent(Objects.requireNonNull(owningInstance), _ -> new WeakHashMap<>())
                 .computeIfAbsent(thread, _ -> new HashMap<>())
-                .put(fieldName, access); // TODO when upgrading permission, log warning?
+                .put(new FieldIdentifier(declaringClass, fieldName), access); // TODO when upgrading permission, log warning?
     }
 
     @CalledByInstrumentedCode
-    public static synchronized void setFieldDefaultPermission(Object owningInstance, String fieldName, Access access) {
+    public static synchronized void setFieldDefaultPermission(Object owningInstance, Class<?> declaringClass, String fieldName, Access access) {
         String message = String.format("Granting %s permission to all threads at object field %s.%s", access, owningInstance, fieldName);
         LOGGER.info(message);
 
         fieldDefaultPermissions
                 .computeIfAbsent(owningInstance, _ -> new HashMap<>())
-                .put(fieldName, access);
+                .put(new FieldIdentifier(declaringClass, fieldName), access);
     }
 
     // not called by instrumented code (yet).
@@ -103,12 +104,13 @@ public final class Permissions {
                 .set(indexFrom, indexTo, access); // TODO chen upgrading permission, log warning?
     }
 
-    public static synchronized Access getFieldPermission(Thread thread, Object owningInstance, String fieldName) {
+    public static synchronized Access getFieldPermission(Thread thread, Object owningInstance, Class<?> declaringClass, String fieldName) {
+        FieldIdentifier fieldId = new FieldIdentifier(declaringClass, fieldName);
         return Optional.ofNullable(fieldPermissions.get(owningInstance))
                 .map(threadFieldAccesses -> threadFieldAccesses.get(thread))
-                .map(fieldAccesses -> fieldAccesses.get(fieldName))
+                .map(fieldAccesses -> fieldAccesses.get(fieldId))
                 .or(() -> Optional.ofNullable(fieldDefaultPermissions.get(owningInstance))
-                        .map(fieldMapping -> fieldMapping.get(fieldName)))
+                        .map(fieldMapping -> fieldMapping.get(fieldId)))
                 .orElse(Access.NONE);
     }
 
@@ -120,14 +122,19 @@ public final class Permissions {
                 .map(rangeAccesses -> rangeAccesses.get(indexFrom, indexTo))
                 .orElse(Access.NONE);
     }
-
+    
+    @CalledByInstrumentedCode
+    public static void logFieldAccess(Field field, Object objectInstance, Access observedAccessLevel) {
+        Object owningInstance = objectInstance == null ? field.getDeclaringClass() : objectInstance;
+        logFieldAccess(owningInstance, field.getDeclaringClass(), field.getName(), observedAccessLevel);
+    }
 
     @CalledByInstrumentedCode
-    public static void logFieldAccess(Object owningInstance, String fieldName, Access observedAccessLevel) {
+    public static void logFieldAccess(Object owningInstance, Class<?> declaringClass, String fieldName, Access observedAccessLevel) {
         if (owningInstance == Access.class && observedAccessLevel == Access.READ) return; // always allow reading these enum values.
 
         Thread thread = Thread.currentThread();
-        Access grantedAccess = getFieldPermission(thread, owningInstance, fieldName);
+        Access grantedAccess = getFieldPermission(thread, owningInstance, declaringClass, fieldName);
         Object formattedOwningInstance = owningInstance instanceof Class<?> clazz ? clazz.getName() : owningInstance;
         logAccess(thread, "%s.%s".formatted(formattedOwningInstance, fieldName), observedAccessLevel, grantedAccess);
     }

@@ -11,8 +11,11 @@ import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.FieldRefEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.classfile.instruction.FieldInstruction;
+import java.lang.classfile.instruction.InvokeInstruction;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
+import static java.lang.constant.ConstantDescs.*;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.security.ProtectionDomain;
@@ -53,10 +56,12 @@ final class FieldUsageTransformer implements ClassFileTransformer {
                         // [..., objectRef]
                         codeBuilder.dup();
                         // [..., objectRef, objectRef]
+                        codeBuilder.ldc(owningClass.asSymbol());
+                        // [..., objectRef, objectRef, declaringClass]
                         codeBuilder.ldc(fieldName.stringValue());
-                        // [..., objectRef, objectRef, fieldName]
+                        // [..., objectRef, objectRef, declaringClass, fieldName]
                         readAccess(codeBuilder);
-                        // [..., objectRef, objectRef, fieldName, Access.READ]
+                        // [..., objectRef, objectRef, declaringClass, fieldName, Access.READ]
                         invokeLogFieldAccess(codeBuilder);
                         // [..., objectRef]
                         codeBuilder.with(codeElement);
@@ -85,10 +90,12 @@ final class FieldUsageTransformer implements ClassFileTransformer {
                         // [..., newValue, objectRef]
                         codeBuilder.dup();
                         // [..., newValue, objectRef, objectRef]
+                        codeBuilder.ldc(owningClass.asSymbol());
+                        // [..., newValue, objectRef, objectRef, declaringClass]
                         codeBuilder.ldc(fieldName.stringValue());
-                        // [..., newValue, objectRef, objectRef, fieldName]
+                        // [..., newValue, objectRef, objectRef, declaringClass, fieldName]
                         writeAccess(codeBuilder);
-                        // [..., newValue, objectRef, objectRef, fieldName, Access.WRITE]
+                        // [..., newValue, objectRef, objectRef, declaringClass, fieldName, Access.WRITE]
                         invokeLogFieldAccess(codeBuilder);
                         // [..., newValue, objectRef]
                         if (isPrimitiveLong(fieldType)) {
@@ -109,10 +116,12 @@ final class FieldUsageTransformer implements ClassFileTransformer {
                         // [...]
                         codeBuilder.ldc(owningClass.asSymbol());
                         // [..., Owner.class]
+                        codeBuilder.ldc(owningClass.asSymbol());
+                        // [..., Owner.class, declaringClass]
                         codeBuilder.ldc(fieldName.stringValue());
-                        // [..., Owner.class, fieldName]
+                        // [..., Owner.class, declaringClass, fieldName]
                         readAccess(codeBuilder);
-                        // [..., Owner.class, fieldName, Access.READ]
+                        // [..., Owner.class, declaringClass, fieldName, Access.READ]
                         invokeLogFieldAccess(codeBuilder);
                         // [...]
                         codeBuilder.with(codeElement);
@@ -125,10 +134,12 @@ final class FieldUsageTransformer implements ClassFileTransformer {
                         // [..., newValue]
                         codeBuilder.ldc(owningClass.asSymbol());
                         // [..., newValue, Owner.class]
+                        codeBuilder.ldc(owningClass.asSymbol());
+                        // [..., newValue, Owner.class, declaringClass]
                         codeBuilder.ldc(fieldName.stringValue());
-                        // [..., newValue, Owner.class, fieldName]
+                        // [..., newValue, Owner.class, declaringClass, fieldName]
                         writeAccess(codeBuilder);
-                        // [..., newValue, Owner.class, fieldName, Access.WRITE]
+                        // [..., newValue, Owner.class, declaringClass, fieldName, Access.WRITE]
                         invokeLogFieldAccess(codeBuilder);
                         // [..., newValue]
                         codeBuilder.with(codeElement);
@@ -137,7 +148,51 @@ final class FieldUsageTransformer implements ClassFileTransformer {
                 }
             }
 
-            // TODO support java.lang.reflect.Field apis.
+            else if (codeElement instanceof InvokeInstruction invokeInstruction
+                    && invokeInstruction.owner().matches(REFLECT_FIELD_CLASSDESC)) {
+
+                if (invokeInstruction.name().equalsString("get") && invokeInstruction.typeSymbol().equals(MTD_FIELD_GET)) {
+                    genMonitorFieldRead(codeBuilder);
+                } else if (invokeInstruction.name().equalsString("getBoolean") && invokeInstruction.typeSymbol().equals(MTD_FIELD_GET_BOOLEAN)) {
+                    genMonitorFieldRead(codeBuilder);
+                } else if (invokeInstruction.name().equalsString("getByte") && invokeInstruction.typeSymbol().equals(MTD_FIELD_GET_BYTE)) {
+                    genMonitorFieldRead(codeBuilder);
+                } else if (invokeInstruction.name().equalsString("getChar") && invokeInstruction.typeSymbol().equals(MTD_FIELD_GET_CHAR)) {
+                    genMonitorFieldRead(codeBuilder);
+                } else if (invokeInstruction.name().equalsString("getDouble") && invokeInstruction.typeSymbol().equals(MTD_FIELD_GET_DOUBLE)) {
+                    genMonitorFieldRead(codeBuilder);
+                } else if (invokeInstruction.name().equalsString("getFloat") && invokeInstruction.typeSymbol().equals(MTD_FIELD_GET_FLOAT)) {
+                    genMonitorFieldRead(codeBuilder);
+                } else if (invokeInstruction.name().equalsString("getInt") && invokeInstruction.typeSymbol().equals(MTD_FIELD_GET_INT)) {
+                    genMonitorFieldRead(codeBuilder);
+                } else if (invokeInstruction.name().equalsString("getLong") && invokeInstruction.typeSymbol().equals(MTD_FIELD_GET_LONG)) {
+                    genMonitorFieldRead(codeBuilder);
+                } else if (invokeInstruction.name().equalsString("getShort") && invokeInstruction.typeSymbol().equals(MTD_FIELD_GET_SHORT)) {
+                    genMonitorFieldRead(codeBuilder);
+                }
+
+                else if (invokeInstruction.name().equalsString("set") && invokeInstruction.typeSymbol().equals(MTD_FIELD_SET)) {
+                    genMonitorFieldWrite(codeBuilder, TypeKind.REFERENCE);
+                } else if (invokeInstruction.name().equalsString("setBoolean") && invokeInstruction.typeSymbol().equals(MTD_FIELD_SET_BOOLEAN)) {
+                    genMonitorFieldWrite(codeBuilder, TypeKind.BOOLEAN);
+                } else if (invokeInstruction.name().equalsString("setByte") && invokeInstruction.typeSymbol().equals(MTD_FIELD_SET_BYTE)) {
+                    genMonitorFieldWrite(codeBuilder, TypeKind.BYTE);
+                } else if (invokeInstruction.name().equalsString("setChar") && invokeInstruction.typeSymbol().equals(MTD_FIELD_SET_CHAR)) {
+                    genMonitorFieldWrite(codeBuilder, TypeKind.CHAR);
+                } else if (invokeInstruction.name().equalsString("setDouble") && invokeInstruction.typeSymbol().equals(MTD_FIELD_SET_DOUBLE)) {
+                    genMonitorFieldWrite(codeBuilder, TypeKind.DOUBLE);
+                } else if (invokeInstruction.name().equalsString("setFloat") && invokeInstruction.typeSymbol().equals(MTD_FIELD_SET_FLOAT)) {
+                    genMonitorFieldWrite(codeBuilder, TypeKind.FLOAT);
+                } else if (invokeInstruction.name().equalsString("setInt") && invokeInstruction.typeSymbol().equals(MTD_FIELD_SET_INT)) {
+                    genMonitorFieldWrite(codeBuilder, TypeKind.INT);
+                } else if (invokeInstruction.name().equalsString("setLong") && invokeInstruction.typeSymbol().equals(MTD_FIELD_SET_LONG)) {
+                    genMonitorFieldWrite(codeBuilder, TypeKind.LONG);
+                } else if (invokeInstruction.name().equalsString("setShort") && invokeInstruction.typeSymbol().equals(MTD_FIELD_SET_SHORT)) {
+                    genMonitorFieldWrite(codeBuilder, TypeKind.SHORT);
+                }
+
+                codeBuilder.with(codeElement);
+            }
 
             else {
                 // proceed with normal code
@@ -152,5 +207,66 @@ final class FieldUsageTransformer implements ClassFileTransformer {
 
     private static boolean isPrimitiveDouble(ClassDesc type) {
         return ConstantDescs.CD_double.equals(type);
+    }
+
+
+    private static final MethodTypeDesc
+            MTD_FIELD_GET = getMethodDescriptor(CD_Object),
+            MTD_FIELD_GET_BOOLEAN = getMethodDescriptor(CD_boolean),
+            MTD_FIELD_GET_BYTE = getMethodDescriptor(CD_byte),
+            MTD_FIELD_GET_CHAR = getMethodDescriptor(CD_char),
+            MTD_FIELD_GET_DOUBLE = getMethodDescriptor(CD_double),
+            MTD_FIELD_GET_FLOAT = getMethodDescriptor(CD_float),
+            MTD_FIELD_GET_INT = getMethodDescriptor(CD_int),
+            MTD_FIELD_GET_LONG = getMethodDescriptor(CD_long),
+            MTD_FIELD_GET_SHORT = getMethodDescriptor(CD_short);
+    private static final MethodTypeDesc
+            MTD_FIELD_SET = setMethodDescriptor(CD_Object),
+            MTD_FIELD_SET_BOOLEAN = setMethodDescriptor(CD_boolean),
+            MTD_FIELD_SET_BYTE = setMethodDescriptor(CD_byte),
+            MTD_FIELD_SET_CHAR = setMethodDescriptor(CD_char),
+            MTD_FIELD_SET_DOUBLE = setMethodDescriptor(CD_double),
+            MTD_FIELD_SET_FLOAT = setMethodDescriptor(CD_float),
+            MTD_FIELD_SET_INT = setMethodDescriptor(CD_int),
+            MTD_FIELD_SET_LONG = setMethodDescriptor(CD_long),
+            MTD_FIELD_SET_SHORT = setMethodDescriptor(CD_short);
+
+    private static MethodTypeDesc getMethodDescriptor(ClassDesc returnType) {
+        return MethodTypeDesc.of(returnType, CD_Object);
+    }
+
+    private static MethodTypeDesc setMethodDescriptor(ClassDesc paramType) {
+        return MethodTypeDesc.of(CD_void, CD_Object, paramType);
+    }
+
+    private static void genMonitorFieldRead(CodeBuilder codeBuilder) {
+        // java.lang.reflect.Field#getX : [..., java.lang.reflect.Field, Object] -> [..., Object]
+
+        // Operand stack:
+        // [..., Field, objectInstance]
+        codeBuilder.dup2();
+        // [..., Field, objectInstance, Field, objectInstance]
+        readAccess(codeBuilder);
+        // [..., Field, objectInstance, Field, objectInstance, Access.READ]
+        invokeLogReflectFieldAccess(codeBuilder);
+        // [..., java.lang.reflect.Field, objectInstance]
+    }
+
+    private static void genMonitorFieldWrite(CodeBuilder codeBuilder, TypeKind typeKind) {
+        // java.lang.reflect.Field#setX : [..., java.lang.reflect.Field, Object, value] -> [...]
+
+        // Operand stack:
+        // [..., Field, objectInstance, value]
+        int value = codeBuilder.allocateLocal(typeKind);
+        codeBuilder.storeLocal(typeKind, value);
+        // [..., Field, objectInstance]
+        codeBuilder.dup2();
+        // [..., Field, objectInstance, Field, objectInstance]
+        writeAccess(codeBuilder);
+        // [..., Field, objectInstance, Field, objectInstance, Access.WRITE]
+        invokeLogReflectFieldAccess(codeBuilder);
+        // [..., Field, objectInstance]
+        codeBuilder.loadLocal(typeKind, value);
+        // [..., java.lang.reflect.Field, objectInstance, value]
     }
 }

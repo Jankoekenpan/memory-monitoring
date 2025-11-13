@@ -100,10 +100,12 @@ final class InitializerTransformer implements ClassFileTransformer {
                                 // [...]
                                 codeBuilder.aload(0);
                                 // [..., this]
+                                codeBuilder.ldc(thisClass);
+                                // [..., this, DeclaringClass.class]
                                 codeBuilder.ldc(instanceFieldModel.fieldName().stringValue());
-                                // [..., this, "someField"]
+                                // [..., this, DeclaringClass.class, "someField"]
                                 writeAccess(codeBuilder);
-                                // [..., this, "someField", Access.WRITE]
+                                // [..., this, DeclaringClass.class, "someField", Access.WRITE]
                                 invokeSetFieldPermission(codeBuilder);
                                 // [...]
                             }
@@ -117,9 +119,10 @@ final class InitializerTransformer implements ClassFileTransformer {
                                 String fieldName = instanceFieldModel.fieldName().stringValue();
                                 if (finalFields.contains(fieldName)) {
                                     // we do get here
-                                    codeBuilder.aload(0);       // [..., this]
-                                    codeBuilder.ldc(fieldName); // [..., this, "someField"]
-                                    readAccess(codeBuilder);    // [..., this, "someField", Access.READ]
+                                    codeBuilder.aload(0);  // [..., this]
+                                    codeBuilder.ldc(thisClass); // [..., this, DeclaringClass.class]
+                                    codeBuilder.ldc(fieldName); // [..., this, DeclaringClass.class, "someField"]
+                                    readAccess(codeBuilder);    // [..., this, DeclaringClass.class, "someField", Access.READ]
                                     invokeSetFieldDefaultPermission(codeBuilder);
                                 }
                             }
@@ -177,6 +180,7 @@ final class InitializerTransformer implements ClassFileTransformer {
             if (finalFields.contains(staticField.fieldName().stringValue())) {
                 // prepare [..., owningInstance, fieldName, access]:
                 codeBuilder.ldc(thisClass);                             // owningInstance = Foo.class
+                codeBuilder.ldc(thisClass);                             // declaringClass = Foo.class
                 codeBuilder.ldc(staticField.fieldName().stringValue()); // fieldName = "someField"
                 readAccess(codeBuilder);                                // access = Access.READ
                 // consume arguments, set default permission for the static final field.
@@ -203,10 +207,12 @@ final class InitializerTransformer implements ClassFileTransformer {
             // [...]
             codeBuilder.ldc(thisClass);
             // [..., Owner.class]
+            codeBuilder.ldc(thisClass);
+            // [..., Owner.class, DeclaringClass.class]
             codeBuilder.ldc(staticFieldModel.fieldName().stringValue());
-            // [..., Owner.class, "someField"]
+            // [..., Owner.class, DeclaringClass.class, "someField"]
             writeAccess(codeBuilder);
-            // [..., Owner.class, "someField", Access.WRITE]
+            // [..., Owner.class, DeclaringClass.class, "someField", Access.WRITE]
             invokeSetFieldPermission(codeBuilder);
             // [...]
         }

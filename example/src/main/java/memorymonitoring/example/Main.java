@@ -4,6 +4,7 @@ import memorymonitoring.runtime.Access;
 import memorymonitoring.runtime.Permissions;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.util.Arrays;
 
 public class Main {
@@ -16,14 +17,14 @@ public class Main {
     private Object[] objectArray = new Object[1];
     private final String string = "string";
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         IO.println("Hello, World!");
 
         Main main = new Main();
 
         // let's cause some violations on purpose (field):
-        Permissions.setFieldPermission(Main.class, "staticField", Access.READ);
-        Permissions.setFieldPermission(main, "instanceField", Access.NONE);
+        Permissions.setFieldPermission(Main.class, Main.class, "staticField", Access.READ);
+        Permissions.setFieldPermission(main, Main.class, "instanceField", Access.NONE);
 
         main.instanceField += 1;
         main.instanceDouble = 1.0;
@@ -65,6 +66,13 @@ public class Main {
 
         System.arraycopy(stringArray, 0, stringArrayArray[0], 0, stringArray.length);   // [["Hello", null], [null, "World"]]
         IO.println(Arrays.deepToString(stringArrayArray));
+
+        Field staticField = Main.class.getDeclaredField("staticField");
+        staticField.setInt(null, 1337);
+        IO.println(staticField.getInt(null));
+        Field instanceField = Main.class.getDeclaredField("instanceField");
+        instanceField.setLong(main, 1338L);
+        IO.println(instanceField.getLong(main));
     }
 
 }

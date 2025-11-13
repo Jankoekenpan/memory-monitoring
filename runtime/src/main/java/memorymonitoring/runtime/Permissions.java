@@ -5,6 +5,7 @@ import memorymonitoring.util.SegmentTree;
 import memorymonitoring.util.WeakIdentityHashMap;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -120,6 +121,13 @@ public final class Permissions {
                 .map(threadRangeAccesses -> threadRangeAccesses.get(thread))
                 .map(rangeAccesses -> rangeAccesses.get(indexFrom, indexTo))
                 .orElse(Access.NONE);
+    }
+
+    // TODO implement instrumentation
+    @CalledByInstrumentedCode
+    public static void logFieldAccess(Field field, Object objectInstance, Access observedAccessLevel) {
+        Object owningInstance = objectInstance == null ? field.getDeclaringClass() : objectInstance;
+        logFieldAccess(owningInstance, field.getDeclaringClass(), field.getName(), observedAccessLevel);
     }
 
     @CalledByInstrumentedCode

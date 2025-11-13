@@ -71,7 +71,7 @@ public class Main {
         staticField.setInt(null, 1337);
         IO.println(staticField.getInt(null));
         Field instanceField = Main.class.getDeclaredField("instanceField");
-        instanceField.setLong(main, 1337L);
+        instanceField.setLong(main, 1338L);
         IO.println(instanceField.getLong(main));
     }
 

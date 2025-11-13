@@ -149,7 +149,7 @@ final class FieldUsageTransformer implements ClassFileTransformer {
             }
 
             else if (codeElement instanceof InvokeInstruction invokeInstruction
-                    && invokeInstruction.owner().matches(CD_FIELD)) {
+                    && invokeInstruction.owner().matches(REFLECT_FIELD_CLASSDESC)) {
 
                 if (invokeInstruction.name().equalsString("get") && invokeInstruction.typeSymbol().equals(MTD_FIELD_GET)) {
                     genMonitorFieldRead(codeBuilder);
@@ -210,7 +210,6 @@ final class FieldUsageTransformer implements ClassFileTransformer {
     }
 
 
-    private static final ClassDesc CD_FIELD = ClassDesc.of("java.lang.reflect", "Field");
     private static final MethodTypeDesc
             MTD_FIELD_GET = getMethodDescriptor(CD_Object),
             MTD_FIELD_GET_BOOLEAN = getMethodDescriptor(CD_boolean),
@@ -245,40 +244,11 @@ final class FieldUsageTransformer implements ClassFileTransformer {
 
         // Operand stack:
         // [..., Field, objectInstance]
-        int objectInstance = codeBuilder.allocateLocal(TypeKind.REFERENCE);
-        codeBuilder.astore(objectInstance);
-        // [..., Field]
-        int reflectField = codeBuilder.allocateLocal(TypeKind.REFERENCE);
-        codeBuilder.astore(reflectField);
-        // [...]
-
-        codeBuilder.aload(objectInstance);
-        // [..., objectInstance]
-        codeBuilder.ifThenElse(
-                Opcode.IFNULL,
-                thenBuilder -> {
-                    // Trying to access a static field. the owningInstance is DeclaringClass.class
-                    thenBuilder.aload(reflectField);
-                    thenBuilder.invokevirtual(CD_FIELD, "getDeclaringClass", MethodTypeDesc.of(CD_Class));
-                }, elseBuilder -> {
-                    // Trying to access an instance field. the owningInstance is simply objectInstance
-                    elseBuilder.aload(objectInstance);
-                }
-        );
-        // [..., owningObject]
-        codeBuilder.aload(reflectField);
-        codeBuilder.invokevirtual(CD_FIELD, "getDeclaringClass", MethodTypeDesc.of(CD_Class));
-        // [..., owningObject, declaringClass]
-        codeBuilder.aload(reflectField);
-        codeBuilder.invokevirtual(CD_FIELD, "getName", MethodTypeDesc.of(CD_String));
-        // [..., owningObject, declaringClass, fieldName]
+        codeBuilder.dup2();
+        // [..., Field, objectInstance, Field, objectInstance]
         readAccess(codeBuilder);
-        // [..., owningObject, declaringClass, fieldName, Access.READ]
-        invokeLogFieldAccess(codeBuilder);
-        // [...]
-
-        codeBuilder.aload(reflectField);
-        codeBuilder.aload(objectInstance);
+        // [..., Field, objectInstance, Field, objectInstance, Access.READ]
+        invokeLogReflectFieldAccess(codeBuilder);
         // [..., java.lang.reflect.Field, objectInstance]
     }
 
@@ -290,40 +260,12 @@ final class FieldUsageTransformer implements ClassFileTransformer {
         int value = codeBuilder.allocateLocal(typeKind);
         codeBuilder.storeLocal(typeKind, value);
         // [..., Field, objectInstance]
-        int objectInstance = codeBuilder.allocateLocal(TypeKind.REFERENCE);
-        codeBuilder.astore(objectInstance);
-        // [..., Field]
-        int reflectField = codeBuilder.allocateLocal(TypeKind.REFERENCE);
-        codeBuilder.astore(reflectField);
-        // [...]
-
-        codeBuilder.aload(objectInstance);
-        // [..., objectInstance]
-        codeBuilder.ifThenElse(
-                Opcode.IFNULL,
-                thenBuilder -> {
-                    // Trying to access a static field. the owningInstance is DeclaringClass.class
-                    thenBuilder.aload(reflectField);
-                    thenBuilder.invokevirtual(CD_FIELD, "getDeclaringClass", MethodTypeDesc.of(CD_Class));
-                }, elseBuilder -> {
-                    // Trying to access an instance field. the owningInstance is simply objectInstance
-                    elseBuilder.aload(objectInstance);
-                }
-        );
-        // [..., owningObject]
-        codeBuilder.aload(reflectField);
-        codeBuilder.invokevirtual(CD_FIELD, "getDeclaringClass", MethodTypeDesc.of(CD_Class));
-        // [..., owningObject, declaringClass]
-        codeBuilder.aload(reflectField);
-        codeBuilder.invokevirtual(CD_FIELD, "getName", MethodTypeDesc.of(CD_String));
-        // [..., owningObject, declaringClass, fieldName]
+        codeBuilder.dup2();
+        // [..., Field, objectInstance, Field, objectInstance]
         writeAccess(codeBuilder);
-        // [..., owningObject, declaringClass, fieldName, Access.WRITE]
-        invokeLogFieldAccess(codeBuilder);
-        // [...]
-
-        codeBuilder.aload(reflectField);
-        codeBuilder.aload(objectInstance);
+        // [..., Field, objectInstance, Field, objectInstance, Access.WRITE]
+        invokeLogReflectFieldAccess(codeBuilder);
+        // [..., Field, objectInstance]
         codeBuilder.loadLocal(typeKind, value);
         // [..., java.lang.reflect.Field, objectInstance, value]
     }

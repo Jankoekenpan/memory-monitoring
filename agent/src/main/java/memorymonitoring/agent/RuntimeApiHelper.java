@@ -2,7 +2,6 @@ package memorymonitoring.agent;
 
 import java.lang.classfile.CodeBuilder;
 import java.lang.constant.ClassDesc;
-import java.lang.constant.ConstantDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 

@@ -31,10 +31,10 @@ java -javaagent:.\agent\target\agent-1.0-SNAPSHOT.jar -cp .\runtime\target\runti
 
 ## Future work
 - Un-hardcode classes to be instrumented.
+- Provide callback based api so that user can handle permission requests in their custom way (so not hardcoded to logging).
 - Fractional permissions? split & merge support?
 - Find a good way for dealing with instance field assignments before super constructor calls (flexible constructor bodies).
 - Optimize away unnecessary permission checks where possible.
-- Support java.lang.reflect.Field api
 - Implement permission transfers automatically for fields annotated with @GuardedBy. Support sommon cases: Synchronized, ReentrantLock.
   - (javax.annotation.concurrent.GuardedBy from jsr305 has retention CLASS, so it should be analyzable by bytecode readers)
 - Case studies: buffered source/sink, casino, memcached challenge(verifythis), hagrid challenge(verifythis).
